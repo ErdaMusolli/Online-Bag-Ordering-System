@@ -5,8 +5,9 @@ using Corta.Helpers;
 
 namespace Corta.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+   
     public class AuthController : ControllerBase
     {
         private readonly UserService _userService;
@@ -23,9 +24,9 @@ namespace Corta.Controllers
         {
             var user = await _userService.RegisterAsync(dto);
             if (user == null)
-                return BadRequest("Email already in use");
+                return BadRequest("Email already exists");
 
-            return Ok("Registration successful");
+            return Ok("User registered successfully");
         }
 
         [HttpPost("login")]

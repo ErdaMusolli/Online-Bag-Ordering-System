@@ -137,3 +137,4 @@ C:\Users\PULSE Electronics\OneDrive\Desktop\Corta-Online-System\Corta\obj\Debug\
 C:\Users\PULSE Electronics\OneDrive\Desktop\Corta-Online-System\Corta\obj\Debug\net8.0\Corta.pdb
 C:\Users\PULSE Electronics\OneDrive\Desktop\Corta-Online-System\Corta\obj\Debug\net8.0\Corta.genruntimeconfig.cache
 C:\Users\PULSE Electronics\OneDrive\Desktop\Corta-Online-System\Corta\obj\Debug\net8.0\ref\Corta.dll
+C:\Users\PULSE Electronics\OneDrive\Desktop\Corta-Online-System\Corta\bin\Debug\net8.0\BCrypt.Net-Next.dll

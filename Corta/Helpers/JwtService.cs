@@ -25,8 +25,9 @@ namespace Corta.Helpers
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not found.")));
+           var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+          _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key not found")));
+
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
