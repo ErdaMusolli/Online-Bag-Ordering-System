@@ -4266,19 +4266,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\PULSE Electronics\\.nuget\\packages\\": {}
+    "C:\\Users\\Elonna\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\PULSE Electronics\\OneDrive\\Desktop\\Corta-Online-System\\Corta\\Corta.csproj",
+      "projectUniqueName": "C:\\Users\\Elonna\\OneDrive\\Desktop\\Corta-Online-Ordering\\Online-Bag-Ordering-System\\Corta\\Corta.csproj",
       "projectName": "Corta",
-      "projectPath": "C:\\Users\\PULSE Electronics\\OneDrive\\Desktop\\Corta-Online-System\\Corta\\Corta.csproj",
-      "packagesPath": "C:\\Users\\PULSE Electronics\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\PULSE Electronics\\OneDrive\\Desktop\\Corta-Online-System\\Corta\\obj\\",
+      "projectPath": "C:\\Users\\Elonna\\OneDrive\\Desktop\\Corta-Online-Ordering\\Online-Bag-Ordering-System\\Corta\\Corta.csproj",
+      "packagesPath": "C:\\Users\\Elonna\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Elonna\\OneDrive\\Desktop\\Corta-Online-Ordering\\Online-Bag-Ordering-System\\Corta\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\PULSE Electronics\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Elonna\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
