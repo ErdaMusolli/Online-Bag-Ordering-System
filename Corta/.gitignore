@@ -1,0 +1,47 @@
+# 🧹 Fshi automatikisht skedarët e përkohshëm, build dhe user-specific
+
+# Output directories
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+
+# Visual Studio / VS Code
+.vscode/
+*.vs/
+
+# Dependency packages
+packages/
+*.nupkg
+
+# ASP.NET publish
+wwwroot/lib/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# EF Core / build-generated
+*.FileListAbsolute.txt
+*.csproj.user
+project.lock.json
+project.fragment.lock.json
+
+# JetBrains / Rider
+.idea/
+
+# OS / system
+.DS_Store
+Thumbs.db
