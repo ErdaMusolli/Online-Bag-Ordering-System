@@ -1,3 +1,4 @@
+namespace Corta.DTOs;
 public class RegisterDto
 {
     public string FullName { get; set; } = String.Empty;

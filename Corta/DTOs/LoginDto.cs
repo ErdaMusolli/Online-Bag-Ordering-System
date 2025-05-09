@@ -1,3 +1,4 @@
+namespace Corta.DTOs;
 public class LoginDto
 {
     public string Email { get; set; } = String.Empty;
