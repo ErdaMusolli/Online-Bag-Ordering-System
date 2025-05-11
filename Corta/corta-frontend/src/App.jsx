@@ -1,10 +1,15 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Register from './pages/Register';
 import TestBootstrap from './components/TestBootstrap';
 
 function App() {
   return (
-    <div className="container mt-5">
-      <TestBootstrap />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<TestBootstrap />} /> 
+        <Route path="/register" element={<Register />} /> 
+      </Routes>
+    </Router>
   );
 }
 

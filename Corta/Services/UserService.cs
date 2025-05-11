@@ -22,7 +22,7 @@ namespace Corta.Services
 
             var user = new User
             {
-                FullName = dto.FullName,
+                Username = dto.Username,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "User"
@@ -56,7 +56,7 @@ namespace Corta.Services
             var user = await _context.Users.FindAsync(id);
             if (user == null) return false;
 
-            user.FullName = dto.FullName;
+            user.Username = dto.Username;
             user.Email = dto.Email;
             await _context.SaveChangesAsync();
             return true;
