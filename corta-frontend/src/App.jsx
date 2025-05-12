@@ -1,28 +1,33 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
-import TestBootstrap from './components/TestBootstrap';
 import ProductList from './components/products/ProductList';
+import ProductItem from './components/products/ProductItem';
 import ProductForm from './components/products/ProductForm';
-import Store from './components/products/Store';
-import Home from './components/products/Home';
-import DashboardUser from './components/products/DashboardUser';
+import Store from "./pages/Store";
+import DashboardUser from './pages/DashboardUser';
+import Navbar from './components/shared/Navbar';
+import Footer from './components/shared/Footer';
 
 function App() {
   return (
+     
     <Router>
-      <Routes>
-        <Route path="/" element={<TestBootstrap />} /> 
+      <Navbar/>
+      <Routes> 
+        <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} /> 
         <Route path="/login" element={<Login />} />
-
-          <Route path="/products" element={<ProductList />} />
+        <Route path="/products" element={<ProductList />} />
         <Route path="/products/create" element={<ProductForm />} />
+        <Route path="/product/" element={<ProductItem />} />
         <Route path="/store" element={<Store />} />
-        <Route path="/home" element={<Home />} />
         <Route path="/dashboard" element={<DashboardUser />} />
       </Routes>
+      <Footer />
     </Router>
+    
   );
 }
 

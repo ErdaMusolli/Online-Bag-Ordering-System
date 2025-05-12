@@ -1,4 +1,4 @@
-// components/products/ProductList.jsx
+
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -6,7 +6,7 @@ function ProductList() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    axios.get('https://localhost:7254/api/products') // URL sipas backend-it tuaj
+    axios.get('https://localhost:5197/api/products')
       .then(response => setProducts(response.data))
       .catch(error => console.error('Gabim gjatë marrjes së produkteve:', error));
   }, []);
