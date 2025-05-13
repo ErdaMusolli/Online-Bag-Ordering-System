@@ -5,7 +5,7 @@
 namespace Corta.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateNewsTable : Migration
+    public partial class UpdateProductPrecision : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

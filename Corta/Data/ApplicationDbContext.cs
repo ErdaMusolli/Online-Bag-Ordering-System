@@ -17,6 +17,14 @@ namespace Corta.Data
        public DbSet<OrderItem> OrderItems { get; set; }
 
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Product>()
+                .Property(p => p.Price)
+                .HasPrecision(18, 2); 
+            base.OnModelCreating(modelBuilder);
+        }
+
     
     }
 }
