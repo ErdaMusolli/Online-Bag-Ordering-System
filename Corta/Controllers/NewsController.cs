@@ -16,7 +16,7 @@ namespace Corta.Controllers
             _newsService = newsService;
         }
 
-        // GET: api/news
+    
         [HttpGet]
         public async Task<ActionResult<List<News>>> GetNews()
         {
@@ -24,7 +24,6 @@ namespace Corta.Controllers
             return Ok(news);
         }
 
-        // GET: api/news/5
         [HttpGet("{id}")]
         public async Task<ActionResult<News>> GetNewsById(int id)
         {
@@ -36,7 +35,7 @@ namespace Corta.Controllers
             return Ok(news);
         }
 
-        // POST: api/news
+      
         [HttpPost]
         public async Task<ActionResult<News>> CreateNews(NewsDto newsDto)
         {
@@ -52,7 +51,6 @@ namespace Corta.Controllers
             return CreatedAtAction(nameof(GetNewsById), new { id = createdNews.Id }, createdNews);
         }
 
-        // PUT: api/news/5
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateNews(int id, NewsDto newsDto)
         {
@@ -73,7 +71,7 @@ namespace Corta.Controllers
             return NoContent();
         }
 
-        // DELETE: api/news/5
+    
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteNews(int id)
         {
