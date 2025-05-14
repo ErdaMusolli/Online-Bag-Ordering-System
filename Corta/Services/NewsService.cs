@@ -13,7 +13,6 @@ namespace Corta.Services
             _context = context;
         }
 
-        // Krijon një lajm të ri
         public async Task<News> CreateNewsAsync(News news)
         {
             _context.News.Add(news);
@@ -21,19 +20,16 @@ namespace Corta.Services
             return news;
         }
 
-        // Merr të gjitha lajmet
         public async Task<List<News>> GetAllNewsAsync()
         {
             return await _context.News.ToListAsync();
         }
 
-        // Merr një lajm përmes ID-së (mund të jetë null)
         public async Task<News?> GetNewsByIdAsync(int id)
         {
             return await _context.News.FindAsync(id);
         }
 
-        // Përditëson një lajm ekzistues përmes ID-së
         public async Task<News?> UpdateNewsAsync(int id, News news)
         {
             var existingNews = await _context.News.FindAsync(id);
@@ -49,7 +45,6 @@ namespace Corta.Services
             return existingNews;
         }
 
-        // Fshin një lajm sipas ID-së
         public async Task<bool> DeleteNewsAsync(int id)
         {
             var news = await _context.News.FindAsync(id);
