@@ -39,6 +39,8 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<NewsService>();
+builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<OrderItemService>();
 
 
 builder.Services.AddEndpointsApiExplorer();
@@ -61,7 +63,7 @@ app.UseCors("AllowAll");
 
 
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
