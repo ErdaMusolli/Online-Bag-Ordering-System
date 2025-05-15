@@ -1,82 +1,60 @@
 using Corta.DTOs;
-using Corta.Models;
 using Corta.Services;
 using Microsoft.AspNetCore.Mvc;
-
+using Corta.Models;
+ 
 namespace Corta.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class NewsController : ControllerBase
     {
         private readonly NewsService _newsService;
-
+ 
         public NewsController(NewsService newsService)
         {
             _newsService = newsService;
         }
-
-    
+ 
+      
         [HttpGet]
-        public async Task<ActionResult<List<News>>> GetNews()
+        public async Task<IActionResult> GetAll()
         {
-            var news = await _newsService.GetAllNewsAsync();
-            return Ok(news);
+            var newsList = await _newsService.GetAllAsync();
+            return Ok(newsList);
         }
+ 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<News>> GetNewsById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var news = await _newsService.GetNewsByIdAsync(id);
-            if (news == null)
-            {
-                return NotFound();
-            }
+            var news = await _newsService.GetByIdAsync(id);
+            if (news == null) return NotFound();
             return Ok(news);
         }
+ 
 
-      
         [HttpPost]
-        public async Task<ActionResult<News>> CreateNews(NewsDto newsDto)
+        public async Task<IActionResult> Create([FromBody] NewsDto dto)
         {
-            var news = new News
-            {
-                Title = newsDto.Title,
-                Content = newsDto.Content,
-                DatePublished = newsDto.DatePublished,
-                Author = newsDto.Author
-            };
-
-            var createdNews = await _newsService.CreateNewsAsync(news);
-            return CreatedAtAction(nameof(GetNewsById), new { id = createdNews.Id }, createdNews);
+            var news = await _newsService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = news.Id }, news);
         }
-
+ 
+       
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateNews(int id, NewsDto newsDto)
+        public async Task<IActionResult> Update(int id, [FromBody] NewsDto dto)
         {
-            var news = new News
-            {
-                Title = newsDto.Title,
-                Content = newsDto.Content,
-                DatePublished = newsDto.DatePublished,
-                Author = newsDto.Author
-            };
-
-            var updatedNews = await _newsService.UpdateNewsAsync(id, news);
-            if (updatedNews == null)
-            {
-                return NotFound();
-            }
-
-            return NoContent();
+            var updated = await _newsService.UpdateAsync(id, dto);
+            return updated ? NoContent() : NotFound();
         }
-
-    
+ 
+  
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteNews(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            await _newsService.DeleteNewsAsync(id);
-            return NoContent();
+            var deleted = await _newsService.DeleteAsync(id);
+            return deleted ? NoContent() : NotFound();
         }
     }
 }

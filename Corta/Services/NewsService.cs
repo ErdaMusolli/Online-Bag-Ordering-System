@@ -1,60 +1,101 @@
 using Corta.Data;
+
+using Corta.DTOs;
+
 using Corta.Models;
+
 using Microsoft.EntityFrameworkCore;
-
+ 
 namespace Corta.Services
+
 {
+
     public class NewsService
+
     {
+
         private readonly ApplicationDbContext _context;
-
+ 
         public NewsService(ApplicationDbContext context)
+
         {
+
             _context = context;
-        }
 
-        public async Task<News> CreateNewsAsync(News news)
+        }
+ 
+        public async Task<List<News>> GetAllAsync() =>
+
+            await _context.News.OrderByDescending(n => n.DatePublished).ToListAsync();
+ 
+        public async Task<News?> GetByIdAsync(int id) =>
+
+            await _context.News.FindAsync(id);
+ 
+        public async Task<News> CreateAsync(NewsDto dto)
+
         {
+
+            var news = new News
+
+            {
+
+                Title = dto.Title,
+
+                Content = dto.Content,
+
+                Author = dto.Author
+
+            };
+ 
             _context.News.Add(news);
+
             await _context.SaveChangesAsync();
+
             return news;
+
         }
+ 
+        public async Task<bool> DeleteAsync(int id)
 
-        public async Task<List<News>> GetAllNewsAsync()
         {
-            return await _context.News.ToListAsync();
-        }
 
-        public async Task<News?> GetNewsByIdAsync(int id)
-        {
-            return await _context.News.FindAsync(id);
-        }
-
-        public async Task<News?> UpdateNewsAsync(int id, News news)
-        {
-            var existingNews = await _context.News.FindAsync(id);
-            if (existingNews != null)
-            {
-                existingNews.Title = news.Title;
-                existingNews.Content = news.Content;
-                existingNews.DatePublished = news.DatePublished;
-                existingNews.Author = news.Author;
-
-                await _context.SaveChangesAsync();
-            }
-            return existingNews;
-        }
-
-        public async Task<bool> DeleteNewsAsync(int id)
-        {
             var news = await _context.News.FindAsync(id);
-            if (news != null)
-            {
-                _context.News.Remove(news);
-                await _context.SaveChangesAsync();
-                return true;
-            }
-            return false;
+
+            if (news == null) return false;
+ 
+            _context.News.Remove(news);
+
+            await _context.SaveChangesAsync();
+
+            return true;
+
         }
+ 
+        public async Task<bool> UpdateAsync(int id, NewsDto dto)
+
+        {
+
+            var news = await _context.News.FindAsync(id);
+
+            if (news == null) return false;
+ 
+            news.Title = dto.Title;
+
+            news.Content = dto.Content;
+
+            news.Author = dto.Author;
+
+            news.DatePublished = DateTime.UtcNow;
+ 
+            await _context.SaveChangesAsync();
+
+            return true;
+
+        }
+
     }
+
 }
+
+ 
