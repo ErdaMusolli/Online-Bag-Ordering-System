@@ -10,6 +10,12 @@ function ProductItem({ product, onAddToCart }) {
       setQuantity(val);
     }
   };
+   const handleAddToCart = () => {
+    onAddToCart(product, quantity);
+    setMessage("✅ Added successfully!");
+
+    setTimeout(() => setMessage(""), 2000);
+  };
 
   return (
     <div className="card h-100">
