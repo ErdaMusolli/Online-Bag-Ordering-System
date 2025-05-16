@@ -30,8 +30,9 @@ function Store() {
   };
 
   return (
-    <div className="container-fluid mt-4">
-      <h2 className="text-center my-4" style={{ fontFamily: 'Gorgia, serif' }}>The Boutique</h2>
+    <div className="container-fluid mt-4 bg-light min-vh-100"style={{ paddingTop: '56px' }}>
+      <h2 className="text-center my-4" style={{ fontFamily: 'Georgia, serif' }}>The Boutique</h2>
+
 
     <ProductList products={products} onAddToCart={handleAddToCart} />
     </div>

@@ -30,11 +30,24 @@ function Cart() {
   }, 0);
 
   return (
-    <div className="container-fluid px-5 mt-4">
-      <h2 className="text-center my-4" style={{ fontFamily: 'Georgia, serif' }}>🛒 Shopping Cart</h2>
+      <div
+    style={{
+      minHeight: "100vh",
+      width: "100vw",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: cartItems.length === 0 ? "center" : "flex-start",
+      alignItems: "center",
+      padding: "20px",
+      paddingTop: "80px", 
+      boxSizing: "border-box",
+      backgroundColor: "#f8f9fa"
+    }}
+  >
+    <h2 className="text-center my-4" style={{ fontFamily: 'Georgia, serif' }}>🛒 Shopping Cart</h2>
 
-      {cartItems.length === 0 ? (
-        <p>Your cart is empty.</p>
+    {cartItems.length === 0 ? (
+      <p>Your cart is empty.</p>
       ) : (
         <>
           {cartItems.map((item, index) => (

@@ -2,11 +2,13 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Footer = () => {
-  return (
-    <footer className="site-footer bg-light text-center py-3">
-      <p className="mb-0">Copyright © 2024 - 2025 Corta, All Right Reserved.</p>
+   return (
+    <footer className="bg-light text-center text-muted py-3 mt-auto" style={{ width: '100%' }}>
+      <div className="container-fluid">
+        © 2025 CORTA. All rights reserved.
+      </div>
     </footer>
   );
-};
+}
 
 export default Footer;
