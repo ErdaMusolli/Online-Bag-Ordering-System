@@ -1,10 +1,39 @@
-import React from 'react';
+import { useState, useEffect } from "react";
+import ProductList from "../components/products/ProductList";
 
 function Store() {
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:5197/api/products")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch products");
+        return res.json();
+      })
+      .then((data) => setProducts(data))
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
+  const handleAddToCart = (product, quantity) => {
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+    quantity = parseInt(quantity);
+    if (isNaN(quantity) || quantity < 1) quantity = 1;
+
+    const index = cart.findIndex(item => item.id === product.id);
+    if (index !== -1) {
+      cart[index].quantity += quantity;
+    } else {
+      cart.push({ ...product, quantity });
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
+  };
+
   return (
-    <div>
-      <h1>Welcome to the Store</h1>
-      <p>Here you will see a list of our products.</p>
+    <div className="container-fluid mt-4">
+      <h2 className="text-center my-4" style={{ fontFamily: 'Gorgia, serif' }}>The Boutique</h2>
+
+    <ProductList products={products} onAddToCart={handleAddToCart} />
     </div>
   );
 }

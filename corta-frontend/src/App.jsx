@@ -11,6 +11,7 @@ import DashboardUser from './pages/DashboardUser';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import ContactPage from './pages/ContactPage';
+import Cart from './pages/Cart';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="/store" element={<Store />} />
         <Route path="/dashboard" element={<DashboardUser />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/cart" element={<Cart />} />
       </Routes>
       <Footer />
     </Router>

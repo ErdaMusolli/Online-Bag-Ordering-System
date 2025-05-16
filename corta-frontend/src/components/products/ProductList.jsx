@@ -1,24 +1,13 @@
+import ProductItem from "./ProductItem";
 
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-
-function ProductList() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    axios.get('https://localhost:5197/api/products')
-      .then(response => setProducts(response.data))
-      .catch(error => console.error('Gabim gjatë marrjes së produkteve:', error));
-  }, []);
-
+function ProductList({ products, onAddToCart }) {
   return (
-    <div>
-      <h2>Lista e Produkteve</h2>
-      <ul>
-        {products.map(product => (
-          <li key={product.id}>{product.name} - {product.price}€</li>
-        ))}
-      </ul>
+    <div className="row">
+      {products.map(product => (
+        <div className="col-md-4 mb-4" key={product.id}>
+          <ProductItem product={product} onAddToCart={onAddToCart} />
+        </div>
+      ))}
     </div>
   );
 }
