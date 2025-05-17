@@ -109,6 +109,7 @@ function Store() {
     imageUrl: "Product13.jpg"
   },
 ]);
+const [sortOrder, setSortOrder] = useState("")
 const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,19 +134,42 @@ const navigate = useNavigate();
       cart.push({ ...product, quantity });
     }
 
-    localStorage.setItem("cart", JSON.stringify(cart));
-    navigate("/cart");
-    setTimeout(() => {
-      navigate("/cart");
-    }, 7000);
+   localStorage.setItem("cart", JSON.stringify(cart));
+   navigate("/cart"); 
+  
+    
   };
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.price - b.price;
+    } else if (sortOrder === "desc") {
+      return b.price - a.price;
+    } else {
+      return 0; 
+    }
+  });
 
   return (
-    <div className="container-fluid mt-4 bg-light min-vh-100"style={{ paddingTop: '56px' }}>
-      <h2 className="text-center my-4" style={{ fontFamily: 'Georgia, serif' }}>The Boutique</h2>
-
-
-    <ProductList products={products} onAddToCart={handleAddToCart} />
+    <div className="container-fluid mt-4 bg-light min-vh-100" style={{ paddingTop: '56px' }}>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+        <h1
+          className="text-center flex-grow-1 mb-3 mb-md-0"
+          style={{ fontFamily: 'Libre Baskerville, serif', marginBottom: 0 }}
+        >
+          The Boutique
+        </h1>
+        <select
+          className="form-select form-select-sm w-auto"
+          style={{ fontSize: '0.75rem', padding: '0.15rem 0.4rem' }}
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+        >
+          <option value="">Sort by Price</option>
+          <option value="asc">Lowest to Highest</option>
+          <option value="desc">Highest to Lowest</option>
+        </select>
+      </div>
+    <ProductList products={sortedProducts} onAddToCart={handleAddToCart} />
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CartItem from "../components/cart/CartItem";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -13,7 +15,12 @@ function Cart() {
     const updatedCart = cartItems.filter(item => item.id !== id);
     setCartItems(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
+     if (updatedCart.length === 0) {
+      navigate("/store");
+    }
+  
   };
+  
 
   const handleQuantityChange = (id, newQuantity) => {
     const updatedCart = cartItems.map(item => 
@@ -21,6 +28,11 @@ function Cart() {
     );
     setCartItems(updatedCart);
     localStorage.setItem("cart", JSON.stringify(updatedCart));
+  };
+   const handleClearCart = () => {
+    localStorage.removeItem("cart");
+    setCartItems([]);
+    navigate("/store");
   };
 
   const totalPrice = cartItems.reduce((sum, item) => {

@@ -24,7 +24,9 @@ const LoginForm = () => {
         setSuccess('Login successful!');
         setError('');
 
-        setTimeout(() => navigate('/'), 1000);
+       setTimeout(() => {
+       window.location.href = "/";
+       }, 1000);
 
       } else {
         const res = await response.text();
