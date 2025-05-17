@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -10,12 +11,41 @@ const RegisterForm = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Invalid email format');
+      return;
+    }
+
+    const { password } = formData;
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must include at least one uppercase letter');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setError('Password must include at least one number');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -43,6 +73,11 @@ const RegisterForm = () => {
           password: '',
           confirmPassword: '',
         });
+
+        setTimeout(() => {
+          setSuccess('');
+          navigate('/login');
+        }, 1500);
       } else {
         const data = await response.json();
         setError(data.message || 'Registration failed');
@@ -53,25 +88,17 @@ const RegisterForm = () => {
     }
   };
 
- return (
- <div className="container-fluid min-vh-100 d-flex justify-content-center align-items-center bg-light">
-   <div className="row g-0 shadow rounded overflow-hidden" style={{ maxWidth: '900px', width: '100%' }}>
-    
-    <div className="col-12 col-lg-6">
-      <img
-        src="/signuppic.jpeg"
-        alt="Signup Visual"
-        className="img-fluid h-100 w-100"
-        style={{ objectFit: 'cover', minHeight: '100%' }}
-      />
-    </div>
+  return (
+    <div className="container-fluid p-5 min-vh-100 d-flex justify-content-center align-items-center bg-light " style={{ paddingTop: '76px',}} >
+      <div className="row w-100 shadow rounded overflow-hidden d-flex px-5 ms-md-5">
+        <div className="col-md-6 bg-light p-0">
+          <img src="/signup.jpg" alt="Signup Visual" className="img-fluid h-100 w-100 object-fit-cover" />
+        </div>
+        <div className="col-md-6 bg-light p-5">
+          <h2 className="mb-4 text-center fw-bold">Sign Up</h2>
 
-    <div className="col-12 col-lg-6 bg-light p-5">
-      <h2 className="mb-4 text-center fw-bold">Sign Up</h2>
-
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-
+          {error && <div className="alert alert-danger">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
@@ -137,5 +164,7 @@ const RegisterForm = () => {
 };
 
 export default RegisterForm;
+
+
 
 
