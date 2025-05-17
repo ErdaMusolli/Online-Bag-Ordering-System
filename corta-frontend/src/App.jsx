@@ -12,6 +12,12 @@ import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import ContactPage from './pages/ContactPage';
 import Cart from './pages/Cart';
+import NewsList from './components/news/NewsList';
+import News1 from "./components/news/News1";
+import News2 from "./components/news/News2";
+import News3 from "./components/news/News3";
+import News4 from "./components/news/News4";
+import News5 from "./components/news/News5";
 
 function App() {
   return (
@@ -29,6 +35,13 @@ function App() {
         <Route path="/dashboard" element={<DashboardUser />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/news" element={<NewsList />} />
+        <Route path="/news/1" element={<News1 />} />
+        <Route path="/news/2" element={<News2 />} />
+        <Route path="/news/3" element={<News3 />} />
+        <Route path="/news/4" element={<News4 />} />
+        <Route path="/news/5" element={<News5 />} />
+
       </Routes>
       <Footer />
     </Router>

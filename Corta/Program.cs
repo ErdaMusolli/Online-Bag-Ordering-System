@@ -34,7 +34,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductService>();
@@ -42,11 +41,9 @@ builder.Services.AddScoped<ContactMessageService>();
 builder.Services.AddScoped<NewsService>();
 
 
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-
 
 builder.Services.AddCors(options =>
 {
@@ -56,10 +53,8 @@ builder.Services.AddCors(options =>
                           .AllowAnyHeader());
 });
 
-
 var app = builder.Build();
 app.UseCors("AllowAll");
-
 
 
 
@@ -79,5 +74,5 @@ app.MapControllers();
 
 
 
-
 app.Run();
+
