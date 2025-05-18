@@ -44,7 +44,9 @@ namespace Corta.Services
 
                 Content = dto.Content,
 
-                Author = dto.Author
+                Author = dto.Author,
+
+                ImageUrl = dto.ImageUrl
 
             };
  
@@ -87,6 +89,8 @@ namespace Corta.Services
             news.Author = dto.Author;
 
             news.DatePublished = DateTime.UtcNow;
+            
+            news.ImageUrl = dto.ImageUrl;
  
             await _context.SaveChangesAsync();
 

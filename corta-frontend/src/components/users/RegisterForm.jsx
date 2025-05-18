@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -10,12 +11,41 @@ const RegisterForm = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.username.length < 3) {
+      setError('Username must be at least 3 characters');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Invalid email format');
+      return;
+    }
+
+    const { password } = formData;
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must include at least one uppercase letter');
+      return;
+    }
+
+    if (!/\d/.test(password)) {
+      setError('Password must include at least one number');
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
@@ -43,6 +73,11 @@ const RegisterForm = () => {
           password: '',
           confirmPassword: '',
         });
+
+        setTimeout(() => {
+          setSuccess('');
+          navigate('/login');
+        }, 1500);
       } else {
         const data = await response.json();
         setError(data.message || 'Registration failed');
@@ -53,29 +88,38 @@ const RegisterForm = () => {
     }
   };
 
- return (
- <div className="container-fluid min-vh-100 d-flex justify-content-center align-items-center bg-light">
-   <div className="row g-0 shadow rounded overflow-hidden" style={{ maxWidth: '900px', width: '100%' }}>
-    
-    <div className="col-12 col-lg-6">
-      <img
-        src="/signuppic.jpeg"
-        alt="Signup Visual"
-        className="img-fluid h-100 w-100"
-        style={{ objectFit: 'cover', minHeight: '100%' }}
-      />
-    </div>
+  return (
+    <div
+      className="container-fluid bg-light d-flex justify-content-center align-items-center min-vh-100"
+      style={{ paddingTop: '80px',
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#f8f9fa',
+      }}
+    >
+      <div className="row shadow rounded overflow-hidden w-100" style={{ maxWidth: '700px' }}>
+     
+        <div className="col-md-6 p-0 d-none d-md-block">
+          <img
+            src="/signup.jpg"
+            alt="Sign Up Visual"
+            className="img-fluid w-100 h-100 object-fit-cover"
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
 
-    <div className="col-12 col-lg-6 bg-light p-5">
-      <h2 className="mb-4 text-center fw-bold">Sign Up</h2>
+     
+        <div className="col-12 col-md-6 bg-white p-4 p-md-5">
+          <h2 className="mb-4 text-center fw-bold" style={{ fontFamily: 'Georgia, serif' }}>
+             Sign Up
+          </h2>
 
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
-
+          {error && <div className="alert alert-danger">{error}</div>}
+          {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label>Username</label>
+              <label className="form-label">Username</label>
               <input
                 type="text"
                 name="username"
@@ -87,7 +131,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Email</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 name="email"
@@ -99,7 +143,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Password</label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
                 name="password"
@@ -111,7 +155,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Confirm Password</label>
+              <label className="form-label">Confirm Password</label>
               <input
                 type="password"
                 name="confirmPassword"
@@ -123,11 +167,11 @@ const RegisterForm = () => {
             </div>
 
             <button type="submit" className="btn btn-success w-100">
-              Sign Up
+              Create Account
             </button>
 
             <div className="text-center mt-3">
-              <a href="/login">Already have an account? Log In</a>
+              <a href="/login">Already have an account? <strong>Log in</strong></a>
             </div>
           </form>
         </div>
@@ -137,5 +181,8 @@ const RegisterForm = () => {
 };
 
 export default RegisterForm;
+
+
+
 
 

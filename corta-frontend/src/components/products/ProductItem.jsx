@@ -13,7 +13,7 @@ function ProductItem({ product, onAddToCart }) {
 
   return (
     <div className="card h-100">
-      <img src={imagePath} className="card-img-top" alt={product.name} />
+      <img src={imagePath} className="card-img-top img-fluid" alt={product.name} />
       <div className="card-body">
         <h5 className="card-title">{product.name}</h5>
         <p className="card-text">{product.description}</p>
