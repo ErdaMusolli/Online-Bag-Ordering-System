@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-
+import PrivacyPolicy from './PrivacyPolicy'; 
+import TermsAndConditions from './TermsAndConditions';
+import RefundPolicy from './RefundPolicy';
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -42,17 +44,23 @@ const ContactForm = () => {
 
   return (
     <div
-      className="d-flex justify-content-center align-items-center min-vh-100 bg-light"
-      style={{ width: '100%' }}
+      style={{
+        minHeight: "100vh",
+        width: "100vw",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "center",
+        padding: "20px",
+        paddingTop: "80px",
+        boxSizing: "border-box",
+        backgroundColor: "#f8f9fa"
+      }}
     >
-      <div className="w-100" style={{ maxWidth: '900px' }}>
-        
-        <div className="text-center mb-4">
-          <h3>Reach out to us for any questions or information</h3>
-        </div>
+      <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>📬 Contact Us</h2>
 
+      <div className="container" style={{ maxWidth: "900px" }}>
         <div className="row">
-         
           <div className="col-md-6 mb-4">
             <div className="card p-4 shadow-sm">
               {success && (
@@ -111,19 +119,16 @@ const ContactForm = () => {
           </div>
         </div>
 
-     
         <footer className="mt-5 text-center text-muted">
-          <a href="#" className="me-3">
-            Terms and Conditions
-          </a>
-          <a href="#" className="me-3">
-            Privacy Policy
-          </a>
-          <a href="#">Refund Policy</a>
+          <a href="/terms" className="me-3">Terms and Conditions</a>
+          <a href="/privacy-policy" className="me-3">Privacy Policy</a>
+          <a href="refund-policy">Refund Policy</a>
         </footer>
+        
       </div>
     </div>
   );
 };
 
 export default ContactForm;
+

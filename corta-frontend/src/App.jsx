@@ -7,7 +7,7 @@ import ProductItem from './components/products/ProductItem';
 import ProductForm from './components/products/ProductForm';
 import ContactForm from './components/ContactForm/ContactForm';
 import Store from "./pages/Store";
-import DashboardAdmin  from './admin/DashboardAdmin';
+import DashboardAdmin from './admin/DashboardAdmin';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import ContactPage from './pages/ContactPage';
@@ -20,20 +20,25 @@ import News4 from "./components/news/News4";
 import News5 from "./components/news/News5";
 import ManageUsers from './admin/ManageUsers';
 import { useEffect } from 'react';
+import PrivacyPolicy from './components/ContactForm/PrivacyPolicy';
+import TermsAndConditions from './components/ContactForm/TermsAndConditions';
+import RefundPolicy from './components/ContactForm/RefundPolicy';
 
-function App() {
-   const location = useLocation();
+function AppContent() {
+  const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
-   useEffect(() => {
-    window.scrollTo(0, 0); // opsionale: scroll to top në çdo ndërrim rruge
+ 
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, [location]);
+ 
   return (
     <>
       {!hideLayout && <Navbar />}
-
-      <Routes> 
+ 
+      <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/register" element={<Register />} /> 
+        <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/products" element={<ProductList />} />
         <Route path="/products/create" element={<ProductForm />} />
@@ -49,13 +54,17 @@ function App() {
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
         <Route path="/manage-users" element={<ManageUsers />} />
+       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
 
       </Routes>
-    {!hideLayout && <Footer />}
+ 
+      {!hideLayout && <Footer />}
     </>
   );
 }
-
+ 
 function App() {
   return (
     <Router>
@@ -63,5 +72,5 @@ function App() {
     </Router>
   );
 }
-
+ 
 export default App;
