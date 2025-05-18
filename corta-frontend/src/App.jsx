@@ -12,6 +12,10 @@ import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import ContactPage from './pages/ContactPage';
 import Cart from './pages/Cart';
+import ContactMessages from './components/ContactMessages/ContactMessages';
+
+
+
 
 function App() {
   return (
@@ -29,6 +33,16 @@ function App() {
         <Route path="/dashboard" element={<DashboardUser />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cart" element={<Cart />} />
+       <Route path="/contact/messages" element={<ContactMessages />} />
+       
+       
+
+      
+
+
+
+        
+
       </Routes>
       <Footer />
     </Router>
