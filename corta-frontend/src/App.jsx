@@ -21,14 +21,12 @@ import News5 from "./components/news/News5";
 import ManageUsers from './admin/ManageUsers';
 import { useEffect } from 'react';
 
-function AppContent() {
-  const location = useLocation();
+function App() {
+   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
-
-  useEffect(() => {
+   useEffect(() => {
     window.scrollTo(0, 0); // opsionale: scroll to top në çdo ndërrim rruge
   }, [location]);
-
   return (
     <>
       {!hideLayout && <Navbar />}
@@ -51,7 +49,6 @@ function AppContent() {
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
         <Route path="/manage-users" element={<ManageUsers />} />
-
 
       </Routes>
     {!hideLayout && <Footer />}
