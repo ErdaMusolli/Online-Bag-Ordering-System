@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -7,7 +7,7 @@ import ProductItem from './components/products/ProductItem';
 import ProductForm from './components/products/ProductForm';
 import ContactForm from './components/ContactForm/ContactForm';
 import Store from "./pages/Store";
-import DashboardUser from './pages/DashboardUser';
+import DashboardAdmin  from './admin/DashboardAdmin';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import ContactPage from './pages/ContactPage';
@@ -18,12 +18,21 @@ import News2 from "./components/news/News2";
 import News3 from "./components/news/News3";
 import News4 from "./components/news/News4";
 import News5 from "./components/news/News5";
+import ManageUsers from './admin/ManageUsers';
+import { useEffect } from 'react';
 
-function App() {
+function AppContent() {
+  const location = useLocation();
+  const hideLayout = location.pathname.startsWith('/admin');
+
+  useEffect(() => {
+    window.scrollTo(0, 0); // opsionale: scroll to top në çdo ndërrim rruge
+  }, [location]);
+
   return (
-     
-    <Router>
-      <Navbar/>
+    <>
+      {!hideLayout && <Navbar />}
+
       <Routes> 
         <Route path="/" element={<Home />} />
         <Route path="/register" element={<Register />} /> 
@@ -32,7 +41,7 @@ function App() {
         <Route path="/products/create" element={<ProductForm />} />
         <Route path="/product/" element={<ProductItem />} />
         <Route path="/store" element={<Store />} />
-        <Route path="/dashboard" element={<DashboardUser />} />
+        <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/news" element={<NewsList />} />
@@ -41,11 +50,20 @@ function App() {
         <Route path="/news/3" element={<News3 />} />
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
+        <Route path="/manage-users" element={<ManageUsers />} />
+
 
       </Routes>
-      <Footer />
+    {!hideLayout && <Footer />}
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
-    
   );
 }
 

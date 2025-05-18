@@ -89,20 +89,37 @@ const RegisterForm = () => {
   };
 
   return (
-    <div className="container-fluid p-5 min-vh-100 d-flex justify-content-center align-items-center bg-light " style={{ paddingTop: '76px',}} >
-      <div className="row w-100 shadow rounded overflow-hidden d-flex px-5 ms-md-5">
-        <div className="col-md-6 bg-light p-0">
-          <img src="/signup.jpg" alt="Signup Visual" className="img-fluid h-100 w-100 object-fit-cover" />
+    <div
+      className="container-fluid bg-light d-flex justify-content-center align-items-center min-vh-100"
+      style={{ paddingTop: '80px',
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#f8f9fa',
+      }}
+    >
+      <div className="row shadow rounded overflow-hidden w-100" style={{ maxWidth: '700px' }}>
+     
+        <div className="col-md-6 p-0 d-none d-md-block">
+          <img
+            src="/signup.jpg"
+            alt="Sign Up Visual"
+            className="img-fluid w-100 h-100 object-fit-cover"
+            style={{ objectFit: 'cover' }}
+          />
         </div>
-        <div className="col-md-6 bg-light p-5">
-          <h2 className="mb-4 text-center fw-bold">Sign Up</h2>
+
+     
+        <div className="col-12 col-md-6 bg-white p-4 p-md-5">
+          <h2 className="mb-4 text-center fw-bold" style={{ fontFamily: 'Georgia, serif' }}>
+             Sign Up
+          </h2>
 
           {error && <div className="alert alert-danger">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
-              <label>Username</label>
+              <label className="form-label">Username</label>
               <input
                 type="text"
                 name="username"
@@ -114,7 +131,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Email</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 name="email"
@@ -126,7 +143,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Password</label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
                 name="password"
@@ -138,7 +155,7 @@ const RegisterForm = () => {
             </div>
 
             <div className="mb-3">
-              <label>Confirm Password</label>
+              <label className="form-label">Confirm Password</label>
               <input
                 type="password"
                 name="confirmPassword"
@@ -150,11 +167,11 @@ const RegisterForm = () => {
             </div>
 
             <button type="submit" className="btn btn-success w-100">
-              Sign Up
+              Create Account
             </button>
 
             <div className="text-center mt-3">
-              <a href="/login">Already have an account? Log In</a>
+              <a href="/login">Already have an account? <strong>Log in</strong></a>
             </div>
           </form>
         </div>
@@ -164,6 +181,7 @@ const RegisterForm = () => {
 };
 
 export default RegisterForm;
+
 
 
 

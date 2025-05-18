@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -11,6 +13,7 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const response = await fetch('http://localhost:5197/api/auth/login', {
         method: 'POST',
@@ -24,9 +27,19 @@ const LoginForm = () => {
         setSuccess('Login successful!');
         setError('');
 
-       setTimeout(() => {
-       window.location.href = "/";
-       }, 1000);
+      const decoded = jwtDecode(data.token);
+       console.log("JWT Decoded:", decoded);
+
+        const role =
+          decoded[
+            'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+          ];
+
+       if (role === 'admin') {
+        window.location.href = '/admin';
+       } else {
+        window.location.href = '/';
+       }
 
       } else {
         const res = await response.text();
@@ -39,14 +52,29 @@ const LoginForm = () => {
   };
 
   return (
-   <div className="container-fluid min-vh-100 d-flex justify-content-center align-items-center bg-light">
-     <div className="row w-75 shadow rounded overflow-hidden d-flex mt-4">
-        <div className="col-md-6 p-0">
-          <img src="/loginpic.jpg" alt="Login Visual" className="img-fluid h-100 w-100 object-fit-cover" />
-        </div>
-     <div className="col-md-6 bg-light p-5">
+   <div
+      className="container-fluid bg-light d-flex justify-content-center align-items-center min-vh-100"
+      style={{ paddingTop: '80px',
+        minHeight: '100vh',
+        width: '100vw',
+        backgroundColor: '#f8f9fa',
+      }}
+    >
+      <div className="row shadow rounded overflow-hidden w-100" style={{ maxWidth: '700px' }}>
 
-          <h2 className="mb-4 text-center fw-bold">Log In</h2>
+        <div className="col-md-6 p-0 d-none d-md-block">
+          <img
+            src="/loginpic.jpg"
+            alt="Log in Visual"
+            className="img-fluid w-100 h-100 object-fit-cover"
+            style={{ objectFit: 'cover' }}
+          />
+        </div>
+
+           <div className="col-12 col-md-6 bg-white p-4 p-md-5">
+          <h2 className="mb-4 text-center fw-bold" style={{ fontFamily: 'Georgia, serif' }}>
+             Log in
+          </h2>
           {error && <div className="alert alert-danger">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
 
@@ -69,6 +97,7 @@ const LoginForm = () => {
         </div>
       </div>
     </div>
+   
   );
 };
 
