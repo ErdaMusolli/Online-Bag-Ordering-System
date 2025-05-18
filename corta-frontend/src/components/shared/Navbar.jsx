@@ -6,27 +6,53 @@ import LogoutButton from './LogoutButton';
 const Navbar = () => {
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
+
+   const closeNavbar = () => {
+    const navbar = document.getElementById('navbarNav');
+    if (navbar) {
+      const bsCollapse = new window.bootstrap.Collapse(navbar, {
+        toggle: false
+      });
+      bsCollapse.hide();
+    }
+  };
+  
+  
   return (
  <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top">
   <div className="container-fluid px-4">
     <div className="navbar-brand title">CORTA</div>
-    <div className="ms-auto d-flex gap-3 align-items-center">
-      <Link className="nav-link" to="/">Home</Link>
-      <Link className="nav-link" to="/store">Store</Link>
-      <Link className="nav-link" to="/contact">ContactUs</Link>
-      <Link className="nav-link" to="/news">News</Link>
-{isAuthenticated ? (
-  <>
-    <LogoutButton />
-    <Link to="/cart" className="btn btn-outline-dark">Cart</Link>
-  </>
-) : (
-  <>
-    <Link to="/register" className="btn btn-outline-dark">Sign up</Link>
-    <Link to="/login" className="btn btn-outline-dark">Log in</Link>
-    <Link to="/cart" className="btn btn-outline-dark">Cart</Link>
-  </>
+
+    <button
+      className="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span className="navbar-toggler-icon"></span>
+    </button>
+    <div className="collapse navbar-collapse" id="navbarNav">
+      <div className="ms-auto d-flex flex-column flex-lg-row gap-3 align-items-start align-items-lg-center mt-3 mt-lg-0">
+        <Link className="nav-link" to="/" onClick={closeNavbar}>Home</Link>
+        <Link className="nav-link" to="/store" onClick={closeNavbar}>Store</Link>
+        <Link className="nav-link" to="/contact" onClick={closeNavbar}>ContactUs</Link>
+        <Link className="nav-link" to="/news"onClick={closeNavbar}>News</Link>
+        {isAuthenticated ? (
+          <>
+            <LogoutButton />
+            <Link to="/cart" className="btn btn-outline-dark" onClick={closeNavbar}>Cart</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/register" className="btn btn-outline-dark" onClick={closeNavbar}>Sign up</Link>
+            <Link to="/login" className="btn btn-outline-dark" onClick={closeNavbar}>Log in</Link>
+            <Link to="/cart" className="btn btn-outline-dark"onClick={closeNavbar}>Cart</Link>
+          </>
 )}
+     </div>
     </div>
   </div>
 </nav>

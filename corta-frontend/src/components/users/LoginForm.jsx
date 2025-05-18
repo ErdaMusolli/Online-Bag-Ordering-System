@@ -62,7 +62,7 @@ const LoginForm = () => {
     >
       <div className="row shadow rounded overflow-hidden w-100" style={{ maxWidth: '700px' }}>
 
-        <div className="col-md-6 p-0 d-none d-md-block">
+        <div className="col-md-6 p-0 ">
           <img
             src="/loginpic.jpg"
             alt="Log in Visual"
