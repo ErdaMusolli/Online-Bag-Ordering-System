@@ -59,7 +59,7 @@ function AppContent() {
         <Route path="/manage-users" element={<ManageUsers />} />
        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
-      <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/refund" element={<RefundPolicy />} />
       <Route path="/view-contact" element={<ViewContacts />} />
       
 
