@@ -23,6 +23,9 @@ import { useEffect } from 'react';
 import PrivacyPolicy from './components/ContactForm/PrivacyPolicy';
 import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';
+import ViewContacts from "./admin/ViewContacts";
+
+
 
 function AppContent() {
   const location = useLocation();
@@ -57,6 +60,8 @@ function AppContent() {
        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/view-contact" element={<ViewContacts />} />
+      
 
       </Routes>
  
