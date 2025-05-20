@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function Home() {
   return (
-    <div className="container-fluid px-0 min-vh-100 d-flex justify-content-center align-items-center bg-light">
+    <div className="container-fluid px-0 min-vh-100 d-flex justify-content-center align-items-center bg-light" style={{ overflowX: 'hidden', width: '100vw' }}>
       <div className="row w-100 justify-content-center align-items-center text-center">
         <div className="col-md-3">
           <img src="/home1.jpg" alt="Image 1" className="img-fluid" />

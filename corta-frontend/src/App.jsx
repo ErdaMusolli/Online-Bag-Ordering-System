@@ -24,6 +24,7 @@ import PrivacyPolicy from './components/ContactForm/PrivacyPolicy';
 import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';
 import ViewContacts from "./admin/ViewContacts";
+import ManageProducts from './admin/ManageProducts';
 
 
 
@@ -61,6 +62,7 @@ function AppContent() {
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
       <Route path="/view-contact" element={<ViewContacts />} />
+      <Route path="/manage-products" element={<ManageProducts />} />
       
 
       </Routes>
