@@ -78,9 +78,7 @@ const TermsAndConditions = () => {
       </div>
 
       <footer className="text-center mt-5 border-top pt-3">
-        <p className="text-muted">
-          © 2024 - 2025 CORTA. All Rights Reserved.
-        </p>
+       
       </footer>
     </div>
   );

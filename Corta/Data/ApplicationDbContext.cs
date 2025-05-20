@@ -14,6 +14,8 @@ namespace Corta.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<ContactMessage> ContactMessages { get; set; }
         public DbSet<News> News { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+
 
 
 
@@ -21,10 +23,10 @@ namespace Corta.Data
         {
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
-                .HasPrecision(18, 2); 
+                .HasPrecision(18, 2);
             base.OnModelCreating(modelBuilder);
-             
-          
+
+
 
         }
        
