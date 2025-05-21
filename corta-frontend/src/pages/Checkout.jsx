@@ -18,19 +18,18 @@ function Checkout() {
   }, []);
 
   const handleCheckout = async () => {
-    // Për shembull, userId mund ta marrësh nga localStorage ose konteksti
-    const userId = JSON.parse(localStorage.getItem("userId")) || 1; // zëvendëso me id reale
 
-    // Ndërto DTO-në që backend pret
+    const userId = JSON.parse(localStorage.getItem("userId")) || 1;
+
     const purchaseDto = {
   userId: userId,
   totalAmount: totalPrice,
-  // mos dërgo purchaseDate sepse backend e vendos CreatedAt vetë
+
   purchaseItems: cartItems.map(item => ({
     productName: item.name,
     quantity: item.quantity,
     price: item.price,
-    productId: item.id,  // nëse e përdor backend, nëse jo, mund ta heqësh
+    productId: item.id,  
   })),
 };
 
@@ -50,10 +49,10 @@ function Checkout() {
       const data = await response.json();
       alert(`Blerja u krye me sukses! ID: ${data.id}`);
 
-      // Pas suksesi, fshij karrocën dhe ridrejto diku
+
       localStorage.removeItem("cart");
       setCartItems([]);
-      // p.sh ridrejto te faqja kryesore ose store
+
       window.location.href = '/store';
 
     } catch (error) {
