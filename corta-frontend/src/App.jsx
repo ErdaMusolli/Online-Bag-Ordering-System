@@ -23,10 +23,9 @@ import { useEffect } from 'react';
 import PrivacyPolicy from './components/ContactForm/PrivacyPolicy';
 import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';
+import ViewContacts from "./admin/ViewContacts";
+import ManageProducts from './admin/ManageProducts';
 import Checkout from './pages/Checkout';
-
-
-
 function AppContent() {
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
@@ -60,11 +59,10 @@ function AppContent() {
        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
+      <Route path="/view-contact" element={<ViewContacts />} />
+      <Route path="/manage-products" element={<ManageProducts />} />
       <Route path="/checkout" element={<Checkout />} />
 
-
-      
-      
 
       </Routes>
  

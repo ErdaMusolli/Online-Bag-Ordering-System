@@ -4,7 +4,7 @@ import TermsAndConditions from './TermsAndConditions';
 import RefundPolicy from './RefundPolicy';
 const ContactForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     message: ''
   });
@@ -33,7 +33,7 @@ const ContactForm = () => {
 
       if (response.ok) {
         setSuccess(true);
-        setFormData({ name: '', email: '', message: '' });
+        setFormData({ fullName: '', email: '', message: '' });
       } else {
         alert('Error sending message.');
       }
@@ -72,7 +72,7 @@ const ContactForm = () => {
                 <div className="mb-3">
                   <input
                     type="text"
-                    name="name"
+                    name="fullName"
                     placeholder="Your name"
                     value={formData.name}
                     onChange={handleChange}
@@ -122,7 +122,7 @@ const ContactForm = () => {
         <footer className="mt-5 text-center text-muted">
           <a href="/terms" className="me-3">Terms and Conditions</a>
           <a href="/privacy-policy" className="me-3">Privacy Policy</a>
-          <a href="refund-policy">Refund Policy</a>
+          <a href="refund">Refund Policy</a>
         </footer>
         
       </div>

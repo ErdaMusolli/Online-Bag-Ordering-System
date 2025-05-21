@@ -73,9 +73,7 @@ const RefundPolicy = () => {
       </div>
 
       <footer className="text-center mt-5 border-top pt-3">
-        <p className="text-muted">
-          Copyright © 2024 - 2025 Corta, All Rights Reserved.
-        </p>
+        
       </footer>
     </div>
   );

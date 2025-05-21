@@ -4,6 +4,7 @@ using Corta.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corta.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250519211531_AddReviewTable")]
+    partial class AddReviewTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -111,11 +114,7 @@ namespace Corta.Migrations
                     b.ToTable("Products");
                 });
 
-<<<<<<< HEAD
-            modelBuilder.Entity("Corta.Models.Purchase", b =>
-=======
             modelBuilder.Entity("Corta.Models.Review", b =>
->>>>>>> 27fca0ab822304b3c8ed9e5bc0aebf918c3589d4
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -123,42 +122,6 @@ namespace Corta.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-<<<<<<< HEAD
-                    b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("UserName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Purchases");
-                });
-
-            modelBuilder.Entity("Corta.Models.PurchaseItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ProductName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PurchaseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-=======
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -173,18 +136,11 @@ namespace Corta.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
->>>>>>> 27fca0ab822304b3c8ed9e5bc0aebf918c3589d4
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-<<<<<<< HEAD
-                    b.HasIndex("PurchaseId");
-
-                    b.ToTable("PurchaseItems");
-=======
                     b.ToTable("Reviews");
->>>>>>> 27fca0ab822304b3c8ed9e5bc0aebf918c3589d4
                 });
 
             modelBuilder.Entity("Corta.Models.User", b =>
@@ -214,22 +170,6 @@ namespace Corta.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Corta.Models.PurchaseItem", b =>
-                {
-                    b.HasOne("Corta.Models.Purchase", "Purchase")
-                        .WithMany("PurchaseItems")
-                        .HasForeignKey("PurchaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Purchase");
-                });
-
-            modelBuilder.Entity("Corta.Models.Purchase", b =>
-                {
-                    b.Navigation("PurchaseItems");
                 });
 #pragma warning restore 612, 618
         }

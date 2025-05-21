@@ -69,7 +69,7 @@ const PrivacyPolicy = () => {
         </p>
 
         <footer className="text-center text-muted border-top pt-3 pb-4">
-          <p>© 2024 - 2025 Corta, All Rights Reserved.</p>
+          
         </footer>
       </div>
     </div>

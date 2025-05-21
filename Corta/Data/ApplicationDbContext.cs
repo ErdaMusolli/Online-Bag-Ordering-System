@@ -16,10 +16,13 @@ namespace Corta.Data
         public DbSet<News> News { get; set; }
         public DbSet<Purchase> Purchases{ get; set; }
         public DbSet<PurchaseItem> PurchaseItems { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
         
+         
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Product>()
@@ -40,6 +43,7 @@ namespace Corta.Data
                 .HasPrecision(18, 2);
         }
     }
+}
 }
 
 
