@@ -52,5 +52,15 @@ namespace Corta.Controllers
             if (!result) return NotFound();
             return Ok("User deleted");
         }
+     [HttpGet("{id}/purchases")]
+        [Authorize]
+        public async Task<IActionResult> GetUserPurchases(int id)
+        {
+            var purchases = await _userService.GetUserPurchasesAsync(id);
+            if (purchases == null)
+                return NotFound("User or purchases not found");
+
+            return Ok(purchases);
+        }
     }
 }

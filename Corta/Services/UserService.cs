@@ -70,6 +70,19 @@ namespace Corta.Services
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
             return true;
+            
+        }
+   public async Task<ICollection<Purchase>?> GetUserPurchasesAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.Purchases)
+                .ThenInclude(p => p.PurchaseItems)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+                return null;
+
+            return user.Purchases;
         }
     }
 }
