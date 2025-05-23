@@ -8,7 +8,7 @@ function Store() {
   const navigate = useNavigate();
  
   useEffect(() => {
-    fetch("http://localhost:5173/api/products")
+    fetch("http://localhost:5197/api/products")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch products");
         return res.json();

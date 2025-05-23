@@ -16,7 +16,7 @@ namespace Corta.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
-        [JsonIgnore]  // <-- Kjo bën që të mos serializohet referenca mbrapsht
+        [JsonIgnore]  
    public Purchase? Purchase { get; set; }
 }
 }
