@@ -41,7 +41,7 @@ function Cart() {
   }, 0);
 
   const handleCheckout = () => {
-    navigate("/checkout"); 
+    navigate("/checkout"); // ➤ Dergo tek faqja Checkout
   };
 
   return (

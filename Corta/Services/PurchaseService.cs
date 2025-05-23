@@ -37,6 +37,7 @@ namespace Corta.Services
         Console.WriteLine($"Item: ProductName={item.ProductName}, Quantity={item.Quantity}, Price={item.Price}");
     }
 
+    // Më pas krijo objektin dhe ruaje
     var purchase = new Purchase
     {
         UserId = purchaseDto.UserId,
