@@ -8,7 +8,8 @@ const ManageNews = () => {
   const [editingNews, setEditingNews] = useState(null);
   const [editForm, setEditForm] = useState({ title: '', content: '', datePublished: '', imageUrl: '' });
   const [searchTerm, setSearchTerm] = useState('');
-
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newNews, setNewNews] = useState({ title: '', content: '', datePublished: '', imageUrl: '' });
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -79,7 +80,29 @@ const ManageNews = () => {
     }
   };
 
-  
+  const handleAdd = async () => {
+    if (!newNews.title.trim()) {
+      alert('Title is required');
+      return;
+    }
+    try {
+      const res = await fetch('http://localhost:5197/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNews),
+      });
+      if (res.ok) {
+        const addedNews = await res.json();
+        setNewsItems([...newsItems, addedNews]);
+        setShowAddModal(false);
+      } else {
+        alert('Adding news failed');
+      }
+    } catch (error) {
+      console.error('Add news error', error);
+    }
+  };
+
   const filteredNews = newsItems.filter(n =>
     n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     n.content.toLowerCase().includes(searchTerm.toLowerCase())
@@ -108,6 +131,16 @@ const ManageNews = () => {
       <h2 className="text-center mb-4" style={{ fontFamily: "Georgia, serif" }}>
         📰 Manage News
       </h2>
+
+      <button
+        className="btn btn-outline-primary mb-3"
+        onClick={() => {
+          setNewNews({ title: '', content: '', datePublished: '', imageUrl: '' });
+          setShowAddModal(true);
+        }}
+      >
+        ➕ Add a News
+      </button>
 
       <div className="w-100" style={{ maxWidth: "1000px" }}>
         <div className="mb-3">
@@ -215,7 +248,7 @@ const ManageNews = () => {
                   <input
                     type="date"
                     className="form-control"
-                    value={editForm.datePublished.split('T')[0]} // për formatin date input
+                    value={editForm.datePublished.split('T')[0]}
                     onChange={(e) =>
                       setEditForm({ ...editForm, datePublished: e.target.value })
                     }
@@ -248,8 +281,83 @@ const ManageNews = () => {
           </div>
         </div>
       )}
+
+      {showAddModal && (
+        <div className="modal d-block" tabIndex="-1" role="dialog">
+          <div className="modal-dialog modal-dialog-centered" role="document">
+            <div className="modal-content shadow">
+              <div className="modal-header">
+                <h5 className="modal-title">Add News</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Title</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newNews.title}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, title: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Content</label>
+                  <textarea
+                    className="form-control"
+                    rows={4}
+                    value={newNews.content}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, content: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Date Published</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={newNews.datePublished}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, datePublished: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Image URL</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={newNews.imageUrl}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, imageUrl: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleAdd}>
+                  Add News
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ManageNews;
+
