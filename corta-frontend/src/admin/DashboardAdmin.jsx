@@ -9,10 +9,11 @@ const DashboardAdmin = () => {
   const [stats, setStats] = useState({
     users: 0,
     products: 0,
-    news: 0,
+    news: 0, 
     messages: 0,
     purchase: 0,
-    reviews: 0 
+    reviews:0
+  
   });
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -46,7 +47,7 @@ const DashboardAdmin = () => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5197/api/dashboard/admin-stats', {
+        const res = await fetch('http://localhost:5197/api/Dashboard/admin-stats', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -95,7 +96,7 @@ const DashboardAdmin = () => {
               <DashboardCard title="News" total={stats.news} />
             </div>
             <div className="col-12 col-sm-6 col-md-6 col-lg-4">
-              <DashboardCard title="Messages" total={stats.messages} />
+              <DashboardCard title="Messages" total={stats.contact} />
             </div>
             <div className="col-12 col-sm-6 col-md-6 col-lg-4">
               <DashboardCard title="Purchase" total={stats.purchase} />

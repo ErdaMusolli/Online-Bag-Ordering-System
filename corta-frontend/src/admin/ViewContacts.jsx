@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from 'react-router-dom';
 
 const ViewContacts = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -52,6 +54,12 @@ return (
       width: '100vw',
     }}
   >
+      <button
+        className="btn btn-outline-secondary mb-3 align-self-start"
+        onClick={() => navigate('/admin')}
+        >
+        ← Back
+       </button>
     <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
       📨 Contact Messages
     </h2>

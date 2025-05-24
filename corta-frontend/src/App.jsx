@@ -25,8 +25,10 @@ import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';
 import ViewContacts from "./admin/ViewContacts";
 import ViewReviews from "./admin/ViewReviews";
-
-
+import ManageProducts from './admin/ManageProducts';
+import Checkout from './pages/Checkout';
+import ManagePurchases from './admin/ManagePurchases';
+import ManageNews from "./admin/ManageNews";
 
 
 
@@ -62,10 +64,13 @@ function AppContent() {
         <Route path="/manage-users" element={<ManageUsers />} />
        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<TermsAndConditions />} />
-      <Route path="/refund" element={<RefundPolicy />} />
+      <Route path="/refund-policy" element={<RefundPolicy />} />
       <Route path="/view-contact" element={<ViewContacts />} />
-       <Route path="/view-reviews" element={<ViewReviews />} />
-
+      <Route path="/view-reviews" element={<ViewReviews />} />
+       <Route path="/manage-products" element={<ManageProducts />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/manage-purchases" element={<ManagePurchases />} />
+      <Route path="/manage-news" element={<ManageNews />} />
       
 
       </Routes>

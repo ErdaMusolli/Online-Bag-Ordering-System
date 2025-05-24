@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ManageUsers = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [editForm, setEditForm] = useState({ username: '', email: '', role: '' });
@@ -104,6 +106,12 @@ const ManageUsers = () => {
         width: '100vw'
       }}
     >
+      <button
+        className="btn btn-outline-secondary mb-3 align-self-start"
+        onClick={() => navigate('/admin')}
+        >
+        ← Back
+       </button>
       <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
         👥 Manage Users
       </h2>

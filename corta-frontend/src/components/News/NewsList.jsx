@@ -52,8 +52,15 @@ const NewsList = () => {
         return res.json();
       })
       .then((data) => {
+        console.log("Fetched data from API:", data); 
+        
+        const newsArray = data.$values || data;
 
-        const backendNews = data.map(item => ({
+        if (!Array.isArray(newsArray)) {
+          throw new Error('Fetched data is not an array');
+        }
+
+        const backendNews = newsArray.map(item => ({
           id: item.id,
           title: item.title,
           description: item.content,
@@ -64,9 +71,8 @@ const NewsList = () => {
         }));
 
         const merged = [...staticNews];
-
         backendNews.forEach((item) => {
-          if (!merged.find((news) => news.id === item.id)) {
+          if (!merged.find(news => news.id === item.id)) {
             merged.push(item);
           }
         });
@@ -81,7 +87,7 @@ const NewsList = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSlideIndex((prev) => (newsItems.length ? (prev + 1) % newsItems.length : 0));
+      setSlideIndex(prev => (newsItems.length ? (prev + 1) % newsItems.length : 0));
     }, 3000);
     return () => clearInterval(interval);
   }, [newsItems.length]);
