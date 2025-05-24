@@ -39,6 +39,7 @@ builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<ContactMessageService>();
 builder.Services.AddScoped<NewsService>();
+builder.Services.AddScoped<ReviewService>();
 
 
 builder.Services.AddEndpointsApiExplorer();

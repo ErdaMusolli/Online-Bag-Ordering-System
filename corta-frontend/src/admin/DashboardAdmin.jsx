@@ -11,7 +11,8 @@ const DashboardAdmin = () => {
     products: 0,
     news: 0,
     messages: 0,
-    purchase: 0
+    purchase: 0,
+    reviews: 0 
   });
 
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -98,11 +99,15 @@ const DashboardAdmin = () => {
             </div>
             <div className="col-12 col-sm-6 col-md-6 col-lg-4">
               <DashboardCard title="Purchase" total={stats.purchase} />
+               </div>
+              <div className="col-12 col-sm-6 col-md-6 col-lg-4">
+             <DashboardCard title="Reviews" total={stats.reviews} />
+             </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+   
   );
 };
 
