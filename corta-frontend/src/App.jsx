@@ -26,7 +26,9 @@ import RefundPolicy from './components/ContactForm/RefundPolicy';
 import ViewContacts from "./admin/ViewContacts";
 import ManageProducts from './admin/ManageProducts';
 import Checkout from './pages/Checkout';
-import ManagePurchase from './admin/ManagePurchase';
+import ManagePurchases from './admin/ManagePurchases';
+import ManageNews from "./admin/ManageNews";
+
 function AppContent() {
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
@@ -63,7 +65,8 @@ function AppContent() {
       <Route path="/view-contact" element={<ViewContacts />} />
       <Route path="/manage-products" element={<ManageProducts />} />
       <Route path="/checkout" element={<Checkout />} />
-      <Route path="/manage-purchase" element={<ManagePurchase />} />
+      <Route path="/manage-purchases" element={<ManagePurchases />} />
+      <Route path="/manage-news" element={<ManageNews />} />
 
 
       </Routes>

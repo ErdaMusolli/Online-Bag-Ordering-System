@@ -24,8 +24,8 @@ namespace Corta.Controllers
                 users = _context.Users.Count(),
                 products = _context.Products.Count(),
                 news = _context.News.Count(),
-                contact = _context.ContactMessages.Count()
-                // purchase = _context.Purchases.Count()
+                contact = _context.ContactMessages.Count(),
+                purchase = _context.Purchases.Count()
             };
             return Ok(stats);
         }

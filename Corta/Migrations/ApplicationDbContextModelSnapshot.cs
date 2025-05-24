@@ -142,10 +142,6 @@ namespace Corta.Migrations
 
                 SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                // Nëse ke fusha të tjera për Review, i shto këtu, për shembull:
-                // b.Property<int>("Rating").HasColumnType("int");
-                // b.Property<string>("Comment").HasColumnType("nvarchar(max)");
-
                 b.HasKey("Id");
 
                 b.ToTable("Reviews");
@@ -169,7 +165,7 @@ namespace Corta.Migrations
                 b.Property<int>("PurchaseId")
                     .HasColumnType("int");
 
-                b.Property<int>("Quantity");  // Pika presje e munguar e shtuar
+                b.Property<int>("Quantity");  
 
                 b.Property<string>("Comment")
                     .IsRequired()
