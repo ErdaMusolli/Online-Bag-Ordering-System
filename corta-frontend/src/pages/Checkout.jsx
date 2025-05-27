@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 
+function getUserIdFromToken() {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+
+  const payload = token.split('.')[1];
+  const decoded = JSON.parse(atob(payload));
+
+  return decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+}
+
+
 function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
@@ -19,13 +30,18 @@ function Checkout() {
 
   const handleCheckout = async () => {
 
-    const userId = JSON.parse(localStorage.getItem("userId")) || 1;
+   const userId = getUserIdFromToken();
+   if (!userId) {
+   alert("User not logged in!");
+   window.location.href = '/login';
+   return;
+   }
 
-    const purchaseDto = {
-  userId: userId,
-  totalAmount: totalPrice,
+   const purchaseDto = {
+   userId: userId,
+   totalAmount: totalPrice,
 
-  purchaseItems: cartItems.map(item => ({
+    purchaseItems: cartItems.map(item => ({
     productName: item.name,
     quantity: item.quantity,
     price: item.price,
@@ -47,7 +63,7 @@ function Checkout() {
       }
 
       const data = await response.json();
-      alert(`Blerja u krye me sukses! ID: ${data.id}`);
+      alert(`Purchase completed successfully! User ID: ${data.id}`);
 
 
       localStorage.removeItem("cart");
@@ -57,7 +73,7 @@ function Checkout() {
 
     } catch (error) {
       console.error(error);
-      alert('Gabim gjatë blerjes. Provo përsëri.');
+      alert('An error occurred during checkout. Please try again.');
     }
   };
 
