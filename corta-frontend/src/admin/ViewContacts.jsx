@@ -11,7 +11,7 @@ const ViewContacts = () => {
     try {
       const res = await fetch("http://localhost:5197/api/contactmessages");
       const data = await res.json();
-      setMessages(data);
+      setMessages(data.$values || []);
     } catch (err) {
       console.error("Error fetching messages:", err);
     } finally {
