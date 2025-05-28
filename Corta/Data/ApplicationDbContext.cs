@@ -17,12 +17,14 @@ namespace Corta.Data
         public DbSet<Purchase> Purchases{ get; set; }
         public DbSet<PurchaseItem> PurchaseItems { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-        
-         
+
+
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Product>()
@@ -41,6 +43,21 @@ namespace Corta.Data
             modelBuilder.Entity<PurchaseItem>()
                 .Property(pi => pi.Price)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Cart>()
+                .HasOne(c => c.User)
+                .WithMany() 
+                .HasForeignKey(c => c.UserId);
+
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Cart)
+                .WithMany(c => c.Items)
+                .HasForeignKey(ci => ci.CartId);
+
+            modelBuilder.Entity<CartItem>()
+               .HasOne(ci => ci.Product)
+               .WithMany() 
+               .HasForeignKey(ci => ci.ProductId);
         }
     }
 }
