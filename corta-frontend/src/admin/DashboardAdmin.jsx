@@ -10,7 +10,7 @@ const DashboardAdmin = () => {
     users: 0,
     products: 0,
     news: 0, 
-    messages: 0,
+    contact: 0,
     purchase: 0,
     reviews:0
   
@@ -47,7 +47,7 @@ const DashboardAdmin = () => {
     const fetchStats = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5197/api/Dashboard/admin-stats', {
+        const res = await fetch('http://localhost:5197/api/dashboard/admin-stats', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();

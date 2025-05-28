@@ -13,23 +13,39 @@ const ManageProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5197/api/products');
+        const token = localStorage.getItem('token');  
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+        const res = await fetch('http://localhost:5197/api/products', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
-        setProducts(data);
+        const productsArray = Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []);
+        setProducts(productsArray);
       } catch (error) {
         console.error('Error fetching products:', error);
       }
     };
 
     fetchProducts();
-  }, []);
+  }, [navigate]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5197/api/products/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5197/api/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (res.ok) {
         setProducts(products.filter((p) => p.id !== id));
       } else {
@@ -47,10 +63,12 @@ const ManageProducts = () => {
 
   const handleUpdate = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`http://localhost:5197/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(editForm),
       });
@@ -65,11 +83,16 @@ const ManageProducts = () => {
       console.error('Update error', err);
     }
   };
+
   const handleAdd = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('http://localhost:5197/api/products', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...newProduct,
           price: parseFloat(newProduct.price),
@@ -107,12 +130,12 @@ const ManageProducts = () => {
         width: '100vw',
       }}
     >
-        <button
+      <button
         className="btn btn-outline-secondary mb-3 align-self-start"
         onClick={() => navigate('/admin')}
-        >
+      >
         ← Back
-       </button>
+      </button>
       <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
         👜 Manage Products
       </h2>

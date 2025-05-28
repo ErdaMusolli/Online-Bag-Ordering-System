@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
@@ -19,7 +20,6 @@ import News3 from "./components/news/News3";
 import News4 from "./components/news/News4";
 import News5 from "./components/news/News5";
 import ManageUsers from './admin/ManageUsers';
-import { useEffect } from 'react';
 import PrivacyPolicy from './components/ContactForm/PrivacyPolicy';
 import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';

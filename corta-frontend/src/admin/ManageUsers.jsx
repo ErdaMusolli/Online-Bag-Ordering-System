@@ -23,6 +23,8 @@ const ManageUsers = () => {
 
         const data = await res.json();
         setUsers(data);
+        setUsers(Array.isArray(data.$values) ? data.$values : []);
+
       } catch (error) {
         console.error('Error fetching users:', error);
       }

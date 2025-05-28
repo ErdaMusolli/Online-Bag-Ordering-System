@@ -80,8 +80,7 @@ function Store() {
      {sortedProducts.map(product => (
     <div key={product.id} className="col-md-4">
     <div className="card p-3 h-100">
-    <img src={product.imageUrl} alt={product.name} className="img-fluid" />
-    <h5>{product.name}</h5>
+    <img src={`/${product.imageUrl}`} alt={product.name} className="img-fluid" />
     <p>{product.description}</p>
     <p><strong>{product.price}€</strong></p>
  
