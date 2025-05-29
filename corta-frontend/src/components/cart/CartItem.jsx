@@ -3,12 +3,12 @@ function CartItem({ item, onRemove, onQuantityChange }) {
 
   const handleDecrease = () => {
     if (item.quantity > 1) {
-      onQuantityChange(item.id, item.quantity - 1);
+      onQuantityChange(item.productId, item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    onQuantityChange(item.id, item.quantity + 1);
+    onQuantityChange(item.productId, item.quantity + 1);
   };
 
   return (
@@ -32,7 +32,7 @@ function CartItem({ item, onRemove, onQuantityChange }) {
         <div className="col-md-3 text-end pe-3">
           <button 
             className="btn btn-danger"
-            onClick={() => onRemove(item.id)}
+            onClick={() => onRemove(item.productId)}
           >
             Delete
           </button>

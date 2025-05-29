@@ -31,6 +31,10 @@ namespace Corta.Services
 
         public async Task<Purchase> CreateAsync(PurchaseDto purchaseDto)
 {
+    if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
+{
+    throw new ArgumentException("Purchase must have at least one item.");
+}
     Console.WriteLine($"UserId: {purchaseDto.UserId}, TotalAmount: {purchaseDto.TotalAmount}");
     foreach(var item in purchaseDto.PurchaseItems)
     {

@@ -34,8 +34,19 @@ namespace Corta.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PurchaseDto dto)
         {
-            var purchase = await _purchaseService.CreateAsync(dto);
-            return Ok(purchase);
+            try
+    {
+        var purchase = await _purchaseService.CreateAsync(dto);
+        return Ok(purchase);
+    }
+    catch (ArgumentException ex)
+    {
+        return BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { error = ex.Message });
+    }
         }
 
         [HttpPut("{id}")]

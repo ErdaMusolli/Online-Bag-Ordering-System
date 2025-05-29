@@ -5,52 +5,71 @@ import StarRating from '../components/StarRating';
 function Store() {
   const [products, setProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [quantities, setQuantities] = useState({});
+  const [token, setToken] = useState(null);
+
   const navigate = useNavigate();
- 
+
   useEffect(() => {
-  fetch("http://localhost:5197/api/Products")
-    .then((res) => {
-      if (!res.ok) throw new Error("Failed to fetch products");
-      return res.json();
-    })
-    .then((data) => {
-      const products = [
-  { id: 1, imageUrl: "Product1.jpg", name: "Chic Corduroy Bag", description: "100% Organic Cotton Canvas", price: "$65.00", quantity: 6 },
-  { id: 2, imageUrl: "Product2.jpg", name: "Urban Denim", description: "100% Organic Cotton Denim", price: "$68.00", quantity: 3 },
-  { id: 3, imageUrl: "Product3.jpg", name: "Ocean Breeze Linen", description: "100% Organic Cotton Denim", price: "$76.00", quantity: 7 },
-  { id: 4, imageUrl: "Product4.jpg", name: "Canvas Coast", description: "100% Organic Cotton Convas", price: "$60.00", quantity: 7 },
-  { id: 5, imageUrl: "Product5.jpg", name: "Eco Cedar Bag", description: "100% Organic Cotton Cedar", price: "$65.00", quantity: 7 },
-  { id: 6, imageUrl: "Product6.jpg", name: "Kyoto Bamboo Bag", description: "100% Organic Cotton Bamboo", price: "$65.00", quantity: 7 },
-  { id: 7, imageUrl: "Product7.jpg", name: "Denim Wanderer", description: "100% Organic Cotton Denim", price: "$48.00", quantity: 7 },
-  { id: 8, imageUrl: "Product8.jpg", name: "Bamboo Temple", description: "100% Organic Cotton Bamboo", price: "$50.00", quantity: 7 },
-  { id: 9, imageUrl: "Product9.jpg", name: "Seaside Linen Bag", description: "100% Organic Cotton Linen", price: "$70.00", quantity: 7 },
-  { id: 10, imageUrl: "Product10.jpg", name: "Cityscape Bag", description: "100% Organic Cotton Canvas", price: "$60.00", quantity: 7 },
-  { id: 11, imageUrl: "Product11.jpg", name: "Pocket Prairie Bag", description: "100% Organic Cotton Canvas", price: "$42.00", quantity: 7 },
-  { id: 12, imageUrl: "Product12.jpg", name: "Canvas Trail Bag", description: "100% Organic Cotton Canvas", price: "$58.00", quantity: 7 }
-];
-
-
-      setProducts(data.$values || []);
-    })
-    .catch((err) => console.error("Error:", err));
+  const savedToken = localStorage.getItem("token");
+  if (savedToken) {
+    setToken(savedToken);
+    setIsLoggedIn(true);
+  }
 }, []);
+ 
+   useEffect(() => {
+    fetch("http://localhost:5197/api/Products")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch products");
+        return res.json();
+      })
+      .then((data) => {
+        setProducts(data.$values || []);
+      const initialQuantities = {};
+        (data.$values || []).forEach(p => {
+          initialQuantities[p.id] = 1;
+        });
+        setQuantities(initialQuantities);
+      })
+      .catch((err) => console.error("Error:", err));
+  }, []);
+
 
  
   const handleAddToCart = (product, quantity) => {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    quantity = parseInt(quantity);
-    if (isNaN(quantity) || quantity < 1) quantity = 1;
- 
-    const index = cart.findIndex(item => item.id === product.id);
+  quantity = parseInt(quantity);
+  if (isNaN(quantity) || quantity < 1) quantity = 1;
+
+  if (isLoggedIn && token) {
+    fetch("http://localhost:5197/api/cart/items", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        productId: product.id,
+        quantity,
+      }),
+    })
+    .then(() => {
+      navigate("/cart");
+    })
+    .catch((err) => console.error("Error adding to backend cart:", err));
+  } else {
+    let guestCart = JSON.parse(localStorage.getItem("guest_cart")) || [];
+    const index = guestCart.findIndex(item => item.productId === product.id);
     if (index !== -1) {
-      cart[index].quantity += quantity;
+      guestCart[index].quantity += quantity;
     } else {
-      cart.push({ ...product, quantity });
+      guestCart.push({ ...product, productId: product.id, quantity });
     }
- 
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem("guest_cart", JSON.stringify(guestCart));
     navigate("/cart");
-  };
+  }
+};
  
   const sortedProducts = [...products].sort((a, b) => {
     if (sortOrder === "asc") return a.price - b.price;

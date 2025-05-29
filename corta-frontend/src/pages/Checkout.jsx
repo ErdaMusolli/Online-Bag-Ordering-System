@@ -15,68 +15,101 @@ function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
-  useEffect(() => {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    setCartItems(cart);
+ useEffect(() => {
+ const fetchCartFromBackend = async () => {
+  try {
+    const response = await fetch("http://localhost:5197/api/cart", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+     const data = await response.json();
+    const itemsArray = Array.isArray(data.items)
+        ? data.items
+        : data.items?.$values || [];
 
-    const total = cart.reduce((sum, item) => {
-      const qty = Number(item.quantity) || 1;
-      const price = Number(item.price) || 0;
-      return sum + price * qty;
-    }, 0);
+      setCartItems(itemsArray);
 
-    setTotalPrice(total);
-  }, []);
-
-  const handleCheckout = async () => {
-
-   const userId = getUserIdFromToken();
-   if (!userId) {
-   alert("User not logged in!");
-   window.location.href = '/login';
-   return;
-   }
-
-   const purchaseDto = {
-   userId: userId,
-   totalAmount: totalPrice,
-
-    purchaseItems: cartItems.map(item => ({
-    productName: item.name,
-    quantity: item.quantity,
-    price: item.price,
-    productId: item.id,  
-  })),
-};
-
-    try {
-      const response = await fetch('http://localhost:5197/api/purchase', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(purchaseDto)
-      });
-
-      if (!response.ok) {
-        throw new Error('Checkout failed');
+      if (Array.isArray(itemsArray)) {
+         const total = itemsArray.reduce(
+            (sum, item) => sum + (item.price || item.product?.price || 0) * item.quantity,
+            0
+          );
+        setTotalPrice(total);
+     } else {
+        console.error("Error: data.items is not an array", data.items);
+        setCartItems([]);
+        setTotalPrice(0);
       }
-
-      const data = await response.json();
-      alert(`Purchase completed successfully! User ID: ${data.id}`);
-
-
-      localStorage.removeItem("cart");
-      setCartItems([]);
-
-      window.location.href = '/store';
-
     } catch (error) {
-      console.error(error);
-      alert('An error occurred during checkout. Please try again.');
+      console.error("Error while fetching the cart:", error);
     }
   };
 
+  fetchCartFromBackend();
+}, []);
+
+
+  const handleCheckout = async () => {
+  const userId = getUserIdFromToken();
+  if (!userId) {
+    alert("User not logged in!");
+    window.location.href = '/login';
+    return;
+  }
+
+  if (cartItems.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  const purchaseDto = {
+    userId: userId,
+    totalAmount: totalPrice,
+    purchaseItems: cartItems.map(item => ({
+      productName: item.productName || item.name,
+      quantity: item.quantity,
+      price: item.price,
+      productId: item.productId || item.id,
+    })),
+  };
+
+  console.log("Sending purchaseDto:", JSON.stringify(purchaseDto, null, 2));
+
+   try {
+    const response = await fetch('http://localhost:5197/api/purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(purchaseDto)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Server error response:", errorData);
+      throw new Error(errorData.message || 'Checkout failed');
+    }
+
+    const data = await response.json();
+    alert(`Purchase completed successfully! Purchase ID: ${data.id}`);
+
+    await fetch("http://localhost:5197/api/cart", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    });
+
+    setCartItems([]);
+    window.location.href = '/store';
+
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+};
   return (
     <div
       style={{
@@ -115,7 +148,7 @@ function Checkout() {
                 marginBottom: "8px",
               }}
             >
-              <div>{item.name}</div>
+              <div>{item.productName}</div>
               <div>{(item.price * item.quantity).toFixed(2)}€</div>
             </div>
           ))}

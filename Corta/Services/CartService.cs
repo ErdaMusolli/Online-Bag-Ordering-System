@@ -104,5 +104,43 @@ namespace Corta.Services
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<bool> PurchaseCartAsync(int userId)
+{
+    var cart = await _context.Carts
+        .Include(c => c.Items)
+        .ThenInclude(i => i.Product)
+        .FirstOrDefaultAsync(c => c.UserId == userId);
+
+    if (cart == null || !cart.Items.Any())
+        return false; 
+    var purchase = new Purchase
+    {
+        UserId = userId,
+        CreatedAt = DateTime.UtcNow,
+        TotalAmount = 0m,
+        PurchaseItems = new List<PurchaseItem>()
+    };
+
+    foreach (var cartItem in cart.Items)
+    {
+        var purchaseItem = new PurchaseItem
+        {
+            ProductName = cartItem.Product?.Name ?? "Unknown",
+            Quantity = cartItem.Quantity,
+            Price = cartItem.Product?.Price ?? 0m
+        };
+        purchase.PurchaseItems.Add(purchaseItem);
+
+        purchase.TotalAmount += purchaseItem.Price * purchaseItem.Quantity;
+    }
+
+    _context.Purchases.Add(purchase);
+    _context.CartItems.RemoveRange(cart.Items);
+
+    await _context.SaveChangesAsync();
+
+    return true;
+}
+
     }
 }

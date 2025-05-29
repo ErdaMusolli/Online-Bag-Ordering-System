@@ -10,47 +10,177 @@ function Cart() {
   const [popupProduct, setPopupProduct] = useState(null);
   const [popupQuantity, setPopupQuantity] = useState(1); 
   const [hasCartItems, setHasCartItems] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token");
+    if (savedToken) {
+      setIsLoggedIn(true);
+      setToken(savedToken);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      fetch("http://localhost:5197/api/cart", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then(res => res.json())
+        .then(data => {
+            if (data?.items?.$values && Array.isArray(data.items.$values)) {
+            setCartItems(data.items.$values);
+          } else if (Array.isArray(data)) {
+            setCartItems(data);
+          } else {
+            setCartItems([]);
+          }
+          localStorage.removeItem("guest_cart");
+        })
+        .catch(err => {
+          console.error("Error fetching cart:", err);
+          setCartItems([]);
+        });
+    } else {
+      const guestCartRaw = JSON.parse(localStorage.getItem("guest_cart")) || [];
+      const guestCart = guestCartRaw.map(item => ({
+        ...item,
+        productId: item.productId ?? item.id, 
+      }));
+      setCartItems(guestCart);
+    }
+  }, [isLoggedIn, token]);
+
+  useEffect(() => {
+    if (popupProduct) setPopupQuantity(1);
+  }, [popupProduct]);
+
+  useEffect(() => {
+    setHasCartItems(cartItems.length > 0);
+  }, [cartItems]);
+
+  const saveToLocalStorage = (updatedCart) => {
+    const toSave = updatedCart.map(({ productId, ...rest }) => ({ id: productId, ...rest }));
+    localStorage.setItem("guest_cart", JSON.stringify(toSave));
+  };
   
 
-  useEffect(() => {
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-    setCartItems(cart);
-  }, []);
-   useEffect(() => {
-    if (popupProduct) {
-      setPopupQuantity(1);
+const handleRemove = (productId) => {
+   if (!productId) {
+    console.error("Error: productId është undefined ose null");
+    return;
+  }
+
+    if (isLoggedIn) {
+      fetch(`http://localhost:5197/api/cart/items/${productId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(() => {
+          setCartItems(cartItems.filter(item => item.productId !== productId));
+        })
+        .catch(console.error);
+    } else {
+      const updatedCart = cartItems.filter(item => item.productId !== productId);
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart);
     }
-  }, [popupProduct]);
-  useEffect(() => {
-  setHasCartItems(cartItems.length > 0);
-}, [cartItems]);
-
-  const handleRemove = (id) => {
-    const updatedCart = cartItems.filter((item) => item.id !== id);
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
   };
 
-  const handleQuantityChange = (id, newQuantity) => {
-    const updatedCart = cartItems.map((item) =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    );
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
+  const handleQuantityChange = (productId, newQuantity) => {
+    if (isLoggedIn) {
+      fetch("http://localhost:5197/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId, quantity: newQuantity }),
+      })
+        .then(() => {
+          const updatedCart = cartItems.map(item =>
+            item.productId === productId ? { ...item, quantity: newQuantity } : item
+          );
+          setCartItems(updatedCart);
+        })
+        .catch(console.error);
+    } else {
+      const updatedCart = cartItems.map(item =>
+        item.productId === productId ? { ...item, quantity: newQuantity } : item
+      );
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart);
+    }
   };
 
-  const handleClearCart = () => {
-    localStorage.removeItem("cart");
-    setCartItems([]);
+
+   const handleClearCart = () => {
+    if (isLoggedIn) {
+      fetch("http://localhost:5197/api/cart", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then(() => setCartItems([]))
+        .catch(console.error);
+    } else {
+      localStorage.removeItem("guest_cart");
+      setCartItems([]);
+    }
     navigate("/store");
   };
 
-  const totalPrice = cartItems.reduce((sum, item) => {
-    const qty = Number(item.quantity) || 1;
-    const price = Number(item.price) || 0;
-    return sum + price * qty;
-  }, 0);
+  const addToCart = (product, quantity = 1) => {
+    if (isLoggedIn) {
+      fetch("http://localhost:5197/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId: product.id, quantity }),
+      }) .then(() => {
+          const existing = cartItems.find(i => i.productId === product.id);
+          let updatedCart;
+          if (existing) {
+            updatedCart = cartItems.map(i =>
+              i.productId === product.id ? { ...i, quantity: i.quantity + quantity } : i
+            );
+          } else {
+            updatedCart = [...cartItems, { ...product, quantity, productId: product.id }];
+          }
+          setCartItems(updatedCart);
+          setPopupVisible(false);
+        })
+        .catch(console.error);
+    } else {
+      const existingItem = cartItems.find(item => item.productId === product.id);
+      let updatedCart;
+      if (existingItem) {
+        updatedCart = cartItems.map(item =>
+          item.productId === product.id
+            ? { ...item, quantity: (Number(item.quantity) || 1) + quantity }
+            : item
+        );
+      } else {
+        updatedCart = [...cartItems, { ...product, quantity, productId: product.id }];
+      }
+      setCartItems(updatedCart);
+      saveToLocalStorage(updatedCart);
+      setPopupVisible(false);
+    }
+  };
+
+  const totalPrice = Array.isArray(cartItems)
+  ? cartItems.reduce((sum, item) => {
+      const qty = Number(item.quantity) || 1;
+      const price = Number(item.price) || 0;
+      return sum + price * qty;
+    }, 0)
+  : 0;
+
 
   const handleCheckout = () => {
     navigate("/checkout");
@@ -59,22 +189,7 @@ function Cart() {
   const handleShopNow = () => {
     navigate("/store");
   };
-    const addToCart = (product, quantity = 1) => {
-    const existingItem = cartItems.find((item) => item.id === product.id);
-    let updatedCart;
-    if (existingItem) {
-      updatedCart = cartItems.map((item) =>
-        item.id === product.id
-          ? { ...item, quantity: (Number(item.quantity) || 1) + quantity }
-          : item
-      );
-    } else {
-      updatedCart = [...cartItems, { ...product, quantity }];
-    }
-    setCartItems(updatedCart);
-    localStorage.setItem("cart", JSON.stringify(updatedCart));
-    setPopupVisible(false);
-  };
+  
 
   const recommendedProducts = [
       { id: 2, imageUrl: "Product2.jpg", name: "Urban Denim", description: "100% Organic Cotton Denim", price: 68.0, quantity: 3 },
