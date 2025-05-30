@@ -1,107 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const ManagePurchases = () => {
-  const navigate = useNavigate();
   const [purchases, setPurchases] = useState([]);
-  const [editingPurchase, setEditingPurchase] = useState(null);
-  const [editForm, setEditForm] = useState({
-    userId: '',
-    totalAmount: '',
-    purchaseItems: [],
-  });
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
+        setLoading(true);
         const token = localStorage.getItem('token');
         const res = await fetch('http://localhost:5197/api/purchase', {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed to fetch purchases');
         const data = await res.json();
-        console.log('Fetched purchases:', data);
-        setPurchases(data.$values || []);
+
+        const normalizedPurchases = Array.isArray(data.$values) ? data.$values : data;
+
+        normalizedPurchases.forEach(p => {
+          if (!Array.isArray(p.purchaseItems) && p.purchaseItems?.$values) {
+            p.purchaseItems = p.purchaseItems.$values;
+          }
+          if (!Array.isArray(p.purchaseItems)) {
+            p.purchaseItems = [];
+          }
+          if (!p.status) p.status = 'In Process';
+        });
+
+        setPurchases(normalizedPurchases);
       } catch (error) {
         console.error('Error fetching purchases:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchPurchases();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this purchase?')) return;
+  const handleStatusChange = async (purchaseId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5197/api/purchase/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const purchaseToUpdate = purchases.find(p => p.id === purchaseId);
+      if (!purchaseToUpdate) return;
 
-      if (res.ok) {
-        setPurchases(purchases.filter(p => p.id !== id));
-      } else {
-        alert('Delete failed');
-      }
-    } catch (err) {
-      console.error('Delete error', err);
-    }
-  };
+      // Prepare updated object with new status
+      const updatedPurchase = { ...purchaseToUpdate, status: newStatus };
 
-  const openEditModal = (purchase) => {
-    setEditingPurchase(purchase);
-    setEditForm({
-      userId: purchase.userId,
-      totalAmount: purchase.totalAmount,
-      purchaseItems: purchase.purchaseItems.map(item => ({
-        productName: item.productName,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-    });
-  };
-
-  const handleUpdate = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5197/api/purchase/${editingPurchase.id}`, {
+      const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(editForm),
+        body: JSON.stringify(updatedPurchase),
       });
 
       if (res.ok) {
-        setPurchases(purchases.map(p => p.id === editingPurchase.id ? { ...p, ...editForm, id: p.id } : p));
-        setEditingPurchase(null);
+        setPurchases(purchases.map(p =>
+          p.id === purchaseId ? { ...p, status: newStatus } : p
+        ));
       } else {
-        alert('Update failed');
+        alert('Failed to update status');
       }
     } catch (err) {
-      console.error('Update error', err);
+      console.error('Error updating status:', err);
     }
-  };
-
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...editForm.purchaseItems];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setEditForm({ ...editForm, purchaseItems: newItems });
-  };
-
-  const addPurchaseItem = () => {
-    setEditForm({
-      ...editForm,
-      purchaseItems: [...editForm.purchaseItems, { productName: '', quantity: 1, price: 0 }],
-    });
-  };
-
-  const removePurchaseItem = (index) => {
-    const newItems = [...editForm.purchaseItems];
-    newItems.splice(index, 1);
-    setEditForm({ ...editForm, purchaseItems: newItems });
   };
 
   const filteredPurchases = purchases.filter(p =>
@@ -122,12 +86,6 @@ const ManagePurchases = () => {
         width: '100vw',
       }}
     >
-      <button
-        className="btn btn-outline-secondary mb-3 align-self-start"
-        onClick={() => navigate('/admin')}
-      >
-        ← Back
-      </button>
       <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
         🛒 Manage Purchases
       </h2>
@@ -145,144 +103,90 @@ const ManagePurchases = () => {
           </div>
         </div>
 
-        <div className="table-responsive">
-          <table className="table table-bordered table-hover bg-white rounded shadow-sm">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>User ID</th>
-                <th>Created At</th>
-                <th>Total Amount</th>
-                <th style={{ minWidth: '150px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPurchases.length > 0 ? (
-                filteredPurchases.map((purchase, index) => (
-                  <tr key={purchase.id}>
-                    <td>{index + 1}</td>
-                    <td>{purchase.userId}</td>
-                    <td>{new Date(purchase.createdAt).toLocaleString()}</td>
-                    <td>${purchase.totalAmount.toFixed(2)}</td>
-                    <td>
-                      <button
-                        className="btn btn-outline-primary btn-sm me-2"
-                        onClick={() => openEditModal(purchase)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDelete(purchase.id)}
-                      >
-                        Delete
-                      </button>
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-bordered table-hover bg-white rounded shadow-sm">
+              <thead className="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>User ID</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Total Amount</th>
+                  <th>Created At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPurchases.length > 0 ? (
+                  filteredPurchases.map((purchase) =>
+                    purchase.purchaseItems.length > 0 ? (
+                      purchase.purchaseItems.map((item, idx) => (
+                        <tr key={`${purchase.id}-${idx}`}>
+                          <td>{idx + 1}</td>
+                          <td>{purchase.userId}</td>
+                          <td>{item.productName}</td>
+                          <td>{item.quantity}</td>
+                          <td>${purchase.totalAmount.toFixed(2)}</td>
+                          <td>{new Date(purchase.createdAt).toLocaleString()}</td>
+                          {/* Show dropdown only on first row of this purchase */}
+                          {idx === 0 && (
+                            <td rowSpan={purchase.purchaseItems.length}>
+                              <select
+                                className="form-select"
+                                value={purchase.status}
+                                onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
+                              >
+                                <option value="In Process">In Process</option>
+                                <option value="Ready">Ready</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            </td>
+                          )}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr key={purchase.id}>
+                        <td>1</td>
+                        <td>{purchase.userId}</td>
+                        <td colSpan="2"><i>No items</i></td>
+                        <td>${purchase.totalAmount.toFixed(2)}</td>
+                        <td>{new Date(purchase.createdAt).toLocaleString()}</td>
+                        <td>
+                          <select
+                            className="form-select"
+                            value={purchase.status}
+                            onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
+                          >
+                            <option value="In Process">In Process</option>
+                            <option value="Ready">Ready</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        </td>
+                      </tr>
+                    )
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center">
+                      No purchases found
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center">
-                    No purchases found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {editingPurchase && (
-        <div className="modal d-block" tabIndex="-1" role="dialog" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-dialog-scrollable modal-lg modal-dialog-centered" role="document">
-            <div className="modal-content shadow">
-              <div className="modal-header">
-                <h5 className="modal-title">Edit Purchase #{editingPurchase.id}</h5>
-                <button type="button" className="btn-close" onClick={() => setEditingPurchase(null)}></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">User ID</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={editForm.userId}
-                    onChange={(e) => setEditForm({ ...editForm, userId: e.target.value })}
-                  />
-                </div>
-                <div className="mb-3">
-                  <label className="form-label">Total Amount</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="form-control"
-                    value={editForm.totalAmount}
-                    onChange={(e) => setEditForm({ ...editForm, totalAmount: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-
-                <hr />
-                <h6>Purchase Items</h6>
-                {editForm.purchaseItems.map((item, idx) => (
-                  <div key={idx} className="border rounded p-2 mb-2">
-                    <div className="mb-2">
-                      <label className="form-label">Product Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        value={item.productName}
-                        onChange={(e) => handleItemChange(idx, 'productName', e.target.value)}
-                      />
-                    </div>
-                    <div className="mb-2 row">
-                      <div className="col">
-                        <label className="form-label">Quantity</label>
-                        <input
-                          type="number"
-                          min="1"
-                          className="form-control"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(idx, 'quantity', parseInt(e.target.value) || 1)}
-                        />
-                      </div>
-                      <div className="col">
-                        <label className="form-label">Price</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          className="form-control"
-                          value={item.price}
-                          onChange={(e) => handleItemChange(idx, 'price', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                    </div>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => removePurchaseItem(idx)}>
-                      Remove Item
-                    </button>
-                  </div>
-                ))}
-
-                <button className="btn btn-outline-primary btn-sm" onClick={addPurchaseItem}>
-                  + Add Item
-                </button>
-              </div>
-
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setEditingPurchase(null)}>
-                  Cancel
-                </button>
-                <button className="btn btn-primary" onClick={handleUpdate}>
-                  Save Changes
-                </button>
-              </div>
-            </div>
+                )}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
 
 export default ManagePurchases;
+
+
 

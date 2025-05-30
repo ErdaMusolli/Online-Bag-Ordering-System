@@ -10,106 +10,108 @@ function getUserIdFromToken() {
   return decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
 }
 
-
 function Checkout() {
   const [cartItems, setCartItems] = useState([]);
   const [totalPrice, setTotalPrice] = useState(0);
 
- useEffect(() => {
- const fetchCartFromBackend = async () => {
-  try {
-    const response = await fetch("http://localhost:5197/api/cart", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
-     const data = await response.json();
-    const itemsArray = Array.isArray(data.items)
-        ? data.items
-        : data.items?.$values || [];
+  useEffect(() => {
+    const fetchCartFromBackend = async () => {
+      try {
+        const response = await fetch("http://localhost:5197/api/cart", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        const data = await response.json();
 
-      setCartItems(itemsArray);
+        // Marrim array-in nga backend (kontrollojmë nëse ka .items.$values ose .items si array)
+        const itemsArray = Array.isArray(data.items)
+          ? data.items
+          : data.items?.$values || [];
 
-      if (Array.isArray(itemsArray)) {
-         const total = itemsArray.reduce(
-            (sum, item) => sum + (item.price || item.product?.price || 0) * item.quantity,
-            0
-          );
-        setTotalPrice(total);
-     } else {
-        console.error("Error: data.items is not an array", data.items);
-        setCartItems([]);
-        setTotalPrice(0);
+        setCartItems(itemsArray);
+
+        // Llogarisim totalin duke përdorur price dhe quantity nga secili item
+        if (Array.isArray(itemsArray)) {
+          const total = itemsArray.reduce((sum, item) => {
+            // Nëse ka field price, e marrim, ose nga product.price
+            const price = Number(item.price ?? item.product?.price ?? 0);
+            const quantity = Number(item.quantity ?? 1);
+            return sum + price * quantity;
+          }, 0);
+          setTotalPrice(total);
+        } else {
+          setCartItems([]);
+          setTotalPrice(0);
+        }
+      } catch (error) {
+        console.error("Error while fetching the cart:", error);
       }
-    } catch (error) {
-      console.error("Error while fetching the cart:", error);
-    }
-  };
+    };
 
-  fetchCartFromBackend();
-}, []);
-
+    fetchCartFromBackend();
+  }, []);
 
   const handleCheckout = async () => {
-  const userId = getUserIdFromToken();
-  if (!userId) {
-    alert("User not logged in!");
-    window.location.href = '/login';
-    return;
-  }
-
-  if (cartItems.length === 0) {
-    alert("Your cart is empty!");
-    return;
-  }
-
-  const purchaseDto = {
-    userId: userId,
-    totalAmount: totalPrice,
-    purchaseItems: cartItems.map(item => ({
-      productName: item.productName || item.name,
-      quantity: item.quantity,
-      price: item.price,
-      productId: item.productId || item.id,
-    })),
-  };
-
-  console.log("Sending purchaseDto:", JSON.stringify(purchaseDto, null, 2));
-
-   try {
-    const response = await fetch('http://localhost:5197/api/purchase', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify(purchaseDto)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Server error response:", errorData);
-      throw new Error(errorData.message || 'Checkout failed');
+    const userId = getUserIdFromToken();
+    if (!userId) {
+      alert("User not logged in!");
+      window.location.href = '/login';
+      return;
     }
 
-    const data = await response.json();
-    alert(`Purchase completed successfully! Purchase ID: ${data.id}`);
+    if (cartItems.length === 0) {
+      alert("Your cart is empty!");
+      return;
+    }
 
-    await fetch("http://localhost:5197/api/cart", {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`
+    // Përgatitim DTO-në me fushat që i ka cartItems sipas Cart-it
+    const purchaseDto = {
+      userId: userId,
+      totalAmount: totalPrice,
+      purchaseItems: cartItems.map(item => ({
+        productName: item.productName || item.name || "",
+        quantity: item.quantity || 1,
+        price: item.price ?? item.product?.price ?? 0,
+        productId: item.productId || item.id,
+      })),
+    };
+
+    try {
+      const response = await fetch('http://localhost:5197/api/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(purchaseDto)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Checkout failed');
       }
-    });
 
-    setCartItems([]);
-    window.location.href = '/store';
+      const data = await response.json();
+      alert(`Purchase completed successfully! Purchase ID: ${data.id}`);
 
-  } catch (error) {
-    console.error(error);
-    alert(error.message);
-  }
-};
+      // Pas përfundimit fshijmë cart-in në backend dhe local
+      await fetch("http://localhost:5197/api/cart", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      setCartItems([]);
+      window.location.href = '/store';
+
+    } catch (error) {
+      console.error(error);
+      alert(error.message);
+    }
+  };
+
   return (
     <div
       style={{
@@ -148,8 +150,8 @@ function Checkout() {
                 marginBottom: "8px",
               }}
             >
-              <div>{item.productName}</div>
-              <div>{(item.price * item.quantity).toFixed(2)}€</div>
+              <div>{item.productName || item.name}</div>
+              <div>{((item.price ?? item.product?.price ?? 0) * (item.quantity ?? 1)).toFixed(2)}€</div>
             </div>
           ))}
           <hr style={{ margin: "10px 0" }} />
@@ -222,5 +224,3 @@ function Checkout() {
 }
 
 export default Checkout;
-
-

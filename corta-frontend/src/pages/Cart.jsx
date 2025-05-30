@@ -192,12 +192,12 @@ const handleRemove = (productId) => {
   
 
   const recommendedProducts = [
-      { id: 2, imageUrl: "Product2.jpg", name: "Urban Denim", description: "100% Organic Cotton Denim", price: 68.0, quantity: 3 },
-      { id: 6, imageUrl: "Product6.jpg", name: "Kyoto Bamboo Bag", description: "100% Organic Cotton Bamboo", price: 65.0, quantity: 7 },
-      { id: 3, imageUrl: "Product3.jpg", name: "Ocean Breeze Linen", description: "100% Organic Cotton Denim", price: 76.0, quantity: 7 },
-      { id: 1, imageUrl: "Product1.jpg", name: "Chic Corduroy Bag", description: "100% Organic Cotton Canvas", price: 65.0, quantity: 6 },
-      { id: 5, imageUrl: "Product5.jpg", name: "Eco Cedar Bag", description: "100% Organic Cotton Cedar", price: 65.0, quantity: 7 },
-       { id: 9, imageUrl: "Product9.jpg", name: "Seaside Linen Bag", description: "100% Organic Cotton Linen", price: 70.0, quantity: 7 },
+      { id: 8, imageUrl: "Product2.jpg", name: "Urban Denim", description: "100% Organic Cotton Denim", price: 68.0, quantity: 3 },
+      { id: 9, imageUrl: "Product6.jpg", name: "Kyoto Bamboo Bag", description: "100% Organic Cotton Bamboo", price: 65.0, quantity: 7 },
+      { id: 10, imageUrl: "Product3.jpg", name: "Ocean Breeze Linen", description: "100% Organic Cotton Denim", price: 76.0, quantity: 7 },
+      { id: 11, imageUrl: "Product1.jpg", name: "Chic Corduroy Bag", description: "100% Organic Cotton Canvas", price: 65.0, quantity: 6 },
+      { id: 12, imageUrl: "Product5.jpg", name: "Eco Cedar Bag", description: "100% Organic Cotton Cedar", price: 65.0, quantity: 7 },
+       { id: 13, imageUrl: "Product9.jpg", name: "Seaside Linen Bag", description: "100% Organic Cotton Linen", price: 70.0, quantity: 7 },
   ];
 
   return (
