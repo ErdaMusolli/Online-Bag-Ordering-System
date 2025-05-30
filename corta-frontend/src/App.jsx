@@ -29,7 +29,7 @@ import ManageProducts from './admin/ManageProducts';
 import Checkout from './pages/Checkout';
 import ManagePurchases from './admin/ManagePurchases';
 import ManageNews from "./admin/ManageNews";
-
+import ChangePassword from './components/users/ChangePassword';
 
 
 function AppContent() {
@@ -62,15 +62,17 @@ function AppContent() {
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
         <Route path="/manage-users" element={<ManageUsers />} />
-       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms" element={<TermsAndConditions />} />
-       <Route path="/refund" element={<RefundPolicy />} />
-      <Route path="/view-contact" element={<ViewContacts />} />
-      <Route path="/view-reviews" element={<ViewReviews />} />
-       <Route path="/manage-products" element={<ManageProducts />} />
-      <Route path="/checkout" element={<Checkout />} />
-      <Route path="/manage-purchases" element={<ManagePurchases />} />
-      <Route path="/manage-news" element={<ManageNews />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/refund" element={<RefundPolicy />} />
+        <Route path="/view-contact" element={<ViewContacts />} />
+        <Route path="/view-reviews" element={<ViewReviews />} />
+        <Route path="/manage-products" element={<ManageProducts />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/manage-purchases" element={<ManagePurchases />} />
+        <Route path="/manage-news" element={<ManageNews />} />
+        <Route path="/change-password" element={<ChangePassword />} />
+
       
 
       </Routes>

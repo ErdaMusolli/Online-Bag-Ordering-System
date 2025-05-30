@@ -4,6 +4,9 @@ using Corta.Services;
 using Corta.Helpers;
 using Corta.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using BCrypt.Net;
 
 namespace Corta.Controllers
 {
@@ -70,5 +73,39 @@ namespace Corta.Controllers
 
             return Ok("Logged out successfully");
         }
+       [HttpPost("change-password")]
+public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+{
+    if (dto.NewPassword != dto.ConfirmPassword)
+    {
+        return BadRequest("New passwords do not match.");
+    }
+
+   
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId))
+    {
+        return Unauthorized("User ID not found in token.");
+    }
+
+    
+    var user = await _context.Users.FindAsync(int.Parse(userId));
+    if (user == null)
+    {
+        return NotFound("User not found.");
+    }
+
+   
+    if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+    {
+        return BadRequest("Current password is incorrect.");
+    }
+
+   
+    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+    await _context.SaveChangesAsync();
+
+    return Ok("Password changed successfully.");
+}
     }
 }

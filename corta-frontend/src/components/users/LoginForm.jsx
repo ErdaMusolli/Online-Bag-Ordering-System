@@ -7,6 +7,7 @@ const LoginForm = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -82,16 +83,33 @@ const LoginForm = () => {
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label>Email Address</label>
-              <input type="email" name="email" className="form-control" value={formData.email} onChange={handleChange} required />
-            </div>
-            <div className="mb-3">
+              <input type="email" name="email" placeholder='Enter your email' className="form-control" value={formData.email} onChange={handleChange} required />
+   </div>
+            <div className="mb-3 position-relative">
               <label>Password</label>
-              <input type="password" name="password" className="form-control" value={formData.password} onChange={handleChange} required />
+              <input
+               type={showPassword ? "text" : "password"}
+               name="password"
+               placeholder="Enter your password"
+               className="form-control"
+               value={formData.password}
+               onChange={handleChange}
+           required
+         />
+         <i
+              className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+              position: 'absolute',
+              right: '10px',
+              top: '50%',
+             cursor: 'pointer'
+            }}
+        ></i>
             </div>
             <button type="submit" className="btn btn-success w-100">Log In</button>
 
             <div className="text-center mt-3">
-              <a href="#">Forgot password?</a><br />
               <a href="/register">Don't have an account? Sign Up</a>
             </div>
           </form>

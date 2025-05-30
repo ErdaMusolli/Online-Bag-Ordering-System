@@ -11,6 +11,9 @@ const RegisterForm = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) =>
@@ -123,6 +126,7 @@ const RegisterForm = () => {
               <input
                 type="text"
                 name="username"
+                placeholder="Username"
                 className="form-control"
                 value={formData.username}
                 onChange={handleChange}
@@ -135,6 +139,7 @@ const RegisterForm = () => {
               <input
                 type="email"
                 name="email"
+                placeholder="Email"
                 className="form-control"
                 value={formData.email}
                 onChange={handleChange}
@@ -142,29 +147,51 @@ const RegisterForm = () => {
               />
             </div>
 
-            <div className="mb-3">
+            <div className="mb-3 position-relative">
               <label className="form-label">Password</label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
+                placeholder="Password"
                 className="form-control"
                 value={formData.password}
                 onChange={handleChange}
                 required
               />
-            </div>
+           <i
+             className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}
+             onClick={() => setShowPassword(!showPassword)}
+             style={{
+             position: 'absolute',
+             right: '10px',
+             top: '50%',
+             cursor: 'pointer'
+           }}
+       ></i>
+</div>
 
-            <div className="mb-3">
+           <div className="mb-3 position-relative">
               <label className="form-label">Confirm Password</label>
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
+                placeholder="Confirm Password"
                 className="form-control"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
               />
-            </div>
+            <i
+                className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'}`}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                position: 'absolute',
+                right: '10px',
+                top: '50%',
+                cursor: 'pointer'
+            }}
+      ></i>
+</div>
 
             <button type="submit" className="btn btn-success w-100">
               Create Account
