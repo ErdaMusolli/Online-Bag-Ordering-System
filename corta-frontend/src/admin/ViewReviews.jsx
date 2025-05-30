@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../services/authFetch';
+import { getNewAccessToken } from '../services/tokenUtils';
+
  
 const ViewReviews = () => {
   const navigate = useNavigate();
@@ -8,46 +11,60 @@ const ViewReviews = () => {
   const [searchTerm, setSearchTerm] = useState('');
  
   const fetchReviews = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5197/api/reviews', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
- 
-      if (!res.ok) throw new Error('Failed to fetch reviews');
- 
-      const data = await res.json();
-      setReviews(data.$values || []); 
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-    } finally {
-      setLoading(false);
+  let token = localStorage.getItem('token');
+
+  if (!token) {
+    token = await getNewAccessToken();
+    if (!token) {
+      navigate('/login');
+      return;
     }
-  };
+  }
+
+  try {
+    const res = await authFetch('http://localhost:5197/api/reviews');
+    if (!res.ok) throw new Error('Failed to fetch reviews');
+
+    const data = await res.json();
+    setReviews(data.$values || []);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
  
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) return;
- 
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5197/api/reviews/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
- 
-      if (res.ok) {
-        setReviews(reviews.filter((r) => r.id !== id));
-      } else {
-        alert('Delete failed');
+const handleDelete = async (id) => {
+  if (!window.confirm('Are you sure you want to delete this review?')) return;
+
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    } catch (error) {
-      console.error('Delete error:', error);
     }
-  };
+
+    const res = await fetch(`http://localhost:5197/api/reviews/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.ok) {
+      setReviews(reviews.filter((r) => r.id !== id));
+    } else {
+      alert('Delete failed');
+    }
+  } catch (error) {
+    console.error('Delete error:', error);
+  }
+};
+
  
   useEffect(() => {
     fetchReviews();
@@ -86,57 +103,53 @@ const ViewReviews = () => {
 <div className="row mb-3">
 <div className="col-12 col-md-6">
 <input
-              type="text"
-              className="form-control"
-              placeholder="Search by email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-</div>
-</div>
- 
-        <div className="table-responsive">
+         type="text"
+         className="form-control"
+         placeholder="Search by email..."
+         value={searchTerm}
+         onChange={(e) => setSearchTerm(e.target.value)}
+           />
+   </div> 
+  </div>
+    <div className="table-responsive">
           {loading ? (
-<p>Loading...</p>
+    <p>Loading...</p>
           ) : filteredReviews.length === 0 ? (
-<p>No reviews found.</p>
+    <p>No reviews found.</p>
           ) : (
-<table className="table table-bordered table-hover bg-white rounded shadow-sm">
-<thead className="table-light">
-<tr>
-<th>#</th>
-<th>Product ID</th>
-<th>User Email</th>
-<th>Rating</th>
-<th>Created At</th>
-<th style={{ minWidth: '120px' }}>Actions</th>
-</tr>
-</thead>
-<tbody>
-                {filteredReviews.map((rev, index) => (
-<tr key={rev.id}>
-<td>{index + 1}</td>
-<td>{rev.productId}</td>
-<td>{rev.userEmail}</td>
-<td>{rev.rating}</td>
-<td>{new Date(rev.createdAt).toLocaleString()}</td>
-<td>
-<button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDelete(rev.id)}
->
-                        Delete
-</button>
-</td>
-</tr>
-                ))}
-</tbody>
-</table>
-          )}
-</div>
-</div>
-</div>
+     <table className="table table-bordered table-hover bg-white rounded shadow-sm">
+     <thead className="table-light">
+     <tr>
+    <th>#</th>
+    <th>Product ID</th>
+    <th>User Email</th>
+    <th>Rating</th>
+    <th>Created At</th>
+    <th style={{ minWidth: '120px' }}>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+      {filteredReviews.map((rev, index) => (
+   <tr key={rev.id}>
+   <td>{index + 1}</td>
+   <td>{rev.productId}</td>
+   <td>{rev.userEmail}</td>
+  <td>{rev.rating}</td>
+        <td>{new Date(rev.createdAt).toLocaleString()}</td>
+  <td>
+     <button className="btn btn-outline-danger btn-sm" 
+       onClick={() => handleDelete(rev.id)}> Delete</button>
+  </td>
+  </tr>
+       ))}
+  </tbody>
+  </table>
+     )}
+  </div>
+  </div>
+  </div>
   );
 };
+
  
 export default ViewReviews;

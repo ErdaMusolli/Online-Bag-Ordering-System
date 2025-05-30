@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getNewAccessToken } from '../services/tokenUtils';
+import { authFetch } from '../services/authFetch';
+
 
 const ManageUsers = () => {
   const navigate = useNavigate();
@@ -10,28 +13,21 @@ const ManageUsers = () => {
   const [roleFilter, setRoleFilter] = useState('');
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5197/api/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const fetchUsers = async () => {
+    try {
+      const res = await authFetch('http://localhost:5197/api/users');
+      if (!res.ok) throw new Error('Failed to fetch users');
 
-        if (!res.ok) throw new Error('Failed to fetch users');
+      const data = await res.json();
+      setUsers(Array.isArray(data.$values) ? data.$values : []);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
 
-        const data = await res.json();
-        setUsers(data);
-        setUsers(Array.isArray(data.$values) ? data.$values : []);
+  fetchUsers();
+}, []);
 
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
-    fetchUsers();
-  }, []);
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
@@ -39,11 +35,8 @@ const ManageUsers = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5197/api/users/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await authFetch(`http://localhost:5197/api/users/${id}`, {
+      method: 'DELETE',
       });
 
       if (res.ok) {
@@ -68,14 +61,13 @@ const ManageUsers = () => {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5197/api/users/${editingUser.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+      const res = await authFetch(`http://localhost:5197/api/users/${editingUser.id}`, {
+         method: 'PUT',
+         headers: {
+        'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm),
-      });
+       body: JSON.stringify(editForm),
+    });
 
       if (res.ok) {
         setUsers(users.map((u) => u.id === editingUser.id ? { ...u, ...editForm } : u));

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../services/authFetch';
+import { getNewAccessToken } from '../services/tokenUtils';
 
 const ManageProducts = () => {
   const navigate = useNavigate();
@@ -10,36 +12,46 @@ const ManageProducts = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', stock: '', imageUrl: '' });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const token = localStorage.getItem('token');  
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-        const res = await fetch('http://localhost:5197/api/products', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error('Failed to fetch products');
-        const data = await res.json();
-        const productsArray = Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []);
-        setProducts(productsArray);
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
+ useEffect(() => {
+  const checkAndFetchProducts = async () => {
+    let token = localStorage.getItem('token');
 
-    fetchProducts();
-  }, [navigate]);
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+    }
+
+    try {
+      const res = await authFetch('http://localhost:5197/api/products');
+      if (!res.ok) throw new Error('Failed to fetch products');
+
+      const data = await res.json();
+      const productsArray = Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []);
+      setProducts(productsArray);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  checkAndFetchProducts();
+}, [navigate]);
+
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+       let token = localStorage.getItem('token');
+       if (!token) {
+       token = await getNewAccessToken();
+       if (!token) {
+       navigate('/login');
+      return;
+    }
+  }
       const res = await fetch(`http://localhost:5197/api/products/${id}`, {
         method: 'DELETE',
         headers: {
@@ -63,7 +75,14 @@ const ManageProducts = () => {
 
   const handleUpdate = async () => {
     try {
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+      if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+      navigate('/login');
+      return;
+  }
+}
       const res = await fetch(`http://localhost:5197/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
@@ -86,7 +105,14 @@ const ManageProducts = () => {
 
   const handleAdd = async () => {
     try {
-      const token = localStorage.getItem('token');
+      let token = localStorage.getItem('token');
+      if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+      navigate('/login');
+      return;
+  }
+}
       const res = await fetch('http://localhost:5197/api/products', {
         method: 'POST',
         headers: { 

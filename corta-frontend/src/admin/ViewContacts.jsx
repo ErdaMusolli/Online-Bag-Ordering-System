@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../services/authFetch';
+import { getNewAccessToken } from '../services/tokenUtils';
+
 
 const ViewContacts = () => {
   const navigate = useNavigate();
@@ -8,33 +11,59 @@ const ViewContacts = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
 
   const fetchMessages = async () => {
-    try {
-      const res = await fetch("http://localhost:5197/api/contactmessages");
-      const data = await res.json();
-      setMessages(data.$values || []);
-    } catch (err) {
-      console.error("Error fetching messages:", err);
-    } finally {
-      setLoading(false);
+  let token = localStorage.getItem('token');
+
+  if (!token) {
+    token = await getNewAccessToken();
+    if (!token) {
+      navigate('/login');
+      return;
     }
-  };
+  }
+
+  try {
+    const res = await authFetch("http://localhost:5197/api/contactmessages");
+    if (!res.ok) throw new Error("Failed to fetch contact messages");
+
+    const data = await res.json();
+    setMessages(data.$values || []);
+  } catch (err) {
+    console.error("Error fetching messages:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const deleteMessage = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this message?")) return;
-    try {
-      const res = await fetch(`http://localhost:5197/api/contactmessages/${id}`, {
-        method: "DELETE",
-      });
+  if (!window.confirm("Are you sure you want to delete this message?")) return;
 
-      if (res.ok) {
-        setMessages(messages.filter((msg) => msg.id !== id));
-      } else {
-        alert("Failed to delete message");
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    } catch (err) {
-      console.error("Delete error:", err);
     }
-  };
+
+    const res = await fetch(`http://localhost:5197/api/contactmessages/${id}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (res.ok) {
+      setMessages(messages.filter((msg) => msg.id !== id));
+    } else {
+      alert("Failed to delete message");
+    }
+  } catch (err) {
+    console.error("Delete error:", err);
+  }
+};
+
 
   useEffect(() => {
     fetchMessages();

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch } from '../services/authFetch';
+import { getNewAccessToken } from '../services/tokenUtils';
+
 
 const ManageNews = () => {
   const navigate = useNavigate();
@@ -12,45 +15,70 @@ const ManageNews = () => {
   const [newNews, setNewNews] = useState({ title: '', content: '', datePublished: '', imageUrl: '' });
 
   useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const res = await fetch('http://localhost:5197/api/news');
-        if (!res.ok) throw new Error('Failed to fetch news');
-        const data = await res.json();
-
-        const newsArray = data.$values || data;
-        const mappedNews = newsArray.map(item => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          datePublished: item.datePublished,
-          imageUrl: item.imageUrl,
-        }));
-
-        setNewsItems(mappedNews);
-      } catch (error) {
-        console.error(error);
+  const checkAndFetchNews = async () => {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    };
+    }
 
-    fetchNews();
-  }, []);
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this news item?')) return;
     try {
-      const res = await fetch(`http://localhost:5197/api/news/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setNewsItems(newsItems.filter(n => n.id !== id));
-      } else {
-        alert('Delete failed');
-      }
+      const res = await authFetch('http://localhost:5197/api/news');
+      if (!res.ok) throw new Error('Failed to fetch news');
+      const data = await res.json();
+
+      const newsArray = data.$values || data;
+      const mappedNews = newsArray.map(item => ({
+        id: item.id,
+        title: item.title,
+        content: item.content,
+        datePublished: item.datePublished,
+        imageUrl: item.imageUrl,
+      }));
+
+      setNewsItems(mappedNews);
     } catch (error) {
       console.error(error);
     }
   };
+
+  checkAndFetchNews();
+}, [navigate]);
+
+
+  const handleDelete = async (id) => {
+  if (!window.confirm('Are you sure you want to delete this news item?')) return;
+
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+    }
+
+    const res = await fetch(`http://localhost:5197/api/news/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (res.ok) {
+      setNewsItems(newsItems.filter(n => n.id !== id));
+    } else {
+      alert('Delete failed');
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
   const openEditModal = (news) => {
     setEditingNews(news);
@@ -63,45 +91,73 @@ const ManageNews = () => {
   };
 
   const handleUpdate = async () => {
-    try {
-      const res = await fetch(`http://localhost:5197/api/news/${editingNews.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editForm),
-      });
-      if (res.ok) {
-        setNewsItems(newsItems.map(n => n.id === editingNews.id ? { ...n, ...editForm } : n));
-        setEditingNews(null);
-      } else {
-        alert('Update failed');
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    } catch (error) {
-      console.error(error);
     }
-  };
+
+    const res = await fetch(`http://localhost:5197/api/news/${editingNews.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(editForm),
+    });
+
+    if (res.ok) {
+      setNewsItems(newsItems.map(n => n.id === editingNews.id ? { ...n, ...editForm } : n));
+      setEditingNews(null);
+    } else {
+      alert('Update failed');
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 
   const handleAdd = async () => {
-    if (!newNews.title.trim()) {
-      alert('Title is required');
-      return;
-    }
-    try {
-      const res = await fetch('http://localhost:5197/api/news', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNews),
-      });
-      if (res.ok) {
-        const addedNews = await res.json();
-        setNewsItems([...newsItems, addedNews]);
-        setShowAddModal(false);
-      } else {
-        alert('Adding news failed');
+  if (!newNews.title.trim()) {
+    alert('Title is required');
+    return;
+  }
+
+  try {
+    let token = localStorage.getItem('token');
+    if (!token) {
+      token = await getNewAccessToken();
+      if (!token) {
+        navigate('/login');
+        return;
       }
-    } catch (error) {
-      console.error('Add news error', error);
     }
-  };
+
+    const res = await fetch('http://localhost:5197/api/news', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(newNews),
+    });
+
+    if (res.ok) {
+      const addedNews = await res.json();
+      setNewsItems([...newsItems, addedNews]);
+      setShowAddModal(false);
+    } else {
+      alert('Adding news failed');
+    }
+  } catch (error) {
+    console.error('Add news error', error);
+  }
+};
 
   const filteredNews = newsItems.filter(n =>
     n.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

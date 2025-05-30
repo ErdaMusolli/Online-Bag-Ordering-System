@@ -3,6 +3,9 @@ import Sidebar from './Sidebar';
 import DashboardCard from './DashboardCard';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { getNewAccessToken } from '../services/tokenUtils';
+import { authFetch } from '../services/authFetch';
+
 
 const DashboardAdmin = () => {
   const navigate = useNavigate();
@@ -25,10 +28,15 @@ const DashboardAdmin = () => {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+  const checkTokenAndRole = async () => {
+    let token = localStorage.getItem('token');
+
     if (!token) {
-      navigate('/login');
-      return;
+      token = await getNewAccessToken(); 
+      if (!token) {
+        navigate('/login');
+        return;
+      }
     }
 
     try {
@@ -41,29 +49,60 @@ const DashboardAdmin = () => {
       localStorage.removeItem('token');
       navigate('/login');
     }
-  }, []);
+  };
+
+  checkTokenAndRole();
+}, [navigate]);
+
 
   useEffect(() => {
     const fetchStats = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5197/api/dashboard/admin-stats', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        setStats(data);
-      } catch (err) {
-        console.error('Failed to fetch dashboard stats', err);
-      }
-    };
+  try {
+    const res = await authFetch('http://localhost:5197/api/dashboard/admin-stats');
 
-    fetchStats();
-  }, []);
+    if (!res.ok) {
+      console.error("Fetch failed with status:", res.status);
+      return;
+    }
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
+    const data = await res.json();
+    setStats(data);
+  } catch (err) {
+    console.error('Failed to fetch dashboard stats:', err.message);
+  }
+};
+   const tryFetchingWithRefresh = async () => {
+    const hasRefreshToken = localStorage.getItem('refreshToken');
+    if (!hasRefreshToken) {
+      navigate('/login');
+      return;
+    }
+
+    await fetchStats();
   };
+
+  tryFetchingWithRefresh();
+}, []);
+
+  const handleLogout = async () => {
+  const refreshToken = localStorage.getItem("refreshToken");
+
+  if (refreshToken) {
+    try {
+      await fetch("http://localhost:5197/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    }
+  }
+
+  localStorage.removeItem("token");
+  localStorage.removeItem("refreshToken");
+  window.location.href = "/login";
+};
 
   return (
     <div className="d-flex flex-column flex-md-row min-vh-100 w-100">

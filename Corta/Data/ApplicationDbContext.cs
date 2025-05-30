@@ -19,6 +19,8 @@ namespace Corta.Data
         public DbSet<Review> Reviews { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,7 +48,7 @@ namespace Corta.Data
 
             modelBuilder.Entity<Cart>()
                 .HasOne(c => c.User)
-                .WithMany() 
+                .WithMany()
                 .HasForeignKey(c => c.UserId);
 
             modelBuilder.Entity<CartItem>()
@@ -56,8 +58,15 @@ namespace Corta.Data
 
             modelBuilder.Entity<CartItem>()
                .HasOne(ci => ci.Product)
-               .WithMany() 
+               .WithMany()
                .HasForeignKey(ci => ci.ProductId);
+
+            modelBuilder.Entity<RefreshToken>()
+               .HasOne(rt => rt.User)
+               .WithMany()
+               .HasForeignKey(rt => rt.UserId)
+               .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }
