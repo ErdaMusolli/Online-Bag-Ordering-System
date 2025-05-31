@@ -37,7 +37,7 @@ namespace Corta.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Carts");
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.CartItem", b =>
@@ -63,7 +63,7 @@ namespace Corta.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.ContactMessage", b =>
@@ -91,7 +91,7 @@ namespace Corta.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ContactMessages");
+                    b.ToTable("ContactMessages", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.News", b =>
@@ -122,7 +122,7 @@ namespace Corta.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("News");
+                    b.ToTable("News", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.Product", b =>
@@ -152,7 +152,7 @@ namespace Corta.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.Purchase", b =>
@@ -177,7 +177,7 @@ namespace Corta.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Purchases");
+                    b.ToTable("Purchases", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.PurchaseItem", b =>
@@ -206,7 +206,7 @@ namespace Corta.Migrations
 
                     b.HasIndex("PurchaseId");
 
-                    b.ToTable("PurchaseItems");
+                    b.ToTable("PurchaseItems", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.RefreshToken", b =>
@@ -234,7 +234,7 @@ namespace Corta.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.Review", b =>
@@ -267,7 +267,7 @@ namespace Corta.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.User", b =>
@@ -296,7 +296,7 @@ namespace Corta.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Corta.Models.Cart", b =>

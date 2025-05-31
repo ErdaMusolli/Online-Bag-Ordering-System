@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 
 const ManagePurchases = () => {
+  const navigate = useNavigate(); 
+
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +47,6 @@ const ManagePurchases = () => {
       const purchaseToUpdate = purchases.find(p => p.id === purchaseId);
       if (!purchaseToUpdate) return;
 
-      // Prepare updated object with new status
       const updatedPurchase = { ...purchaseToUpdate, status: newStatus };
 
       const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}`, {
@@ -86,6 +88,14 @@ const ManagePurchases = () => {
         width: '100vw',
       }}
     >
+      
+      <button
+        className="btn btn-outline-secondary mb-3 align-self-start"
+        onClick={() => navigate('/admin')}
+      >
+        ← Back
+      </button>
+
       <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
         🛒 Manage Purchases
       </h2>
@@ -131,7 +141,6 @@ const ManagePurchases = () => {
                           <td>{item.quantity}</td>
                           <td>${purchase.totalAmount.toFixed(2)}</td>
                           <td>{new Date(purchase.createdAt).toLocaleString()}</td>
-                          {/* Show dropdown only on first row of this purchase */}
                           {idx === 0 && (
                             <td rowSpan={purchase.purchaseItems.length}>
                               <select
@@ -187,6 +196,7 @@ const ManagePurchases = () => {
 };
 
 export default ManagePurchases;
+
 
 
 

@@ -24,17 +24,14 @@ function Checkout() {
         });
         const data = await response.json();
 
-        // Marrim array-in nga backend (kontrollojmë nëse ka .items.$values ose .items si array)
         const itemsArray = Array.isArray(data.items)
           ? data.items
           : data.items?.$values || [];
 
         setCartItems(itemsArray);
 
-        // Llogarisim totalin duke përdorur price dhe quantity nga secili item
         if (Array.isArray(itemsArray)) {
-          const total = itemsArray.reduce((sum, item) => {
-            // Nëse ka field price, e marrim, ose nga product.price
+            const total = itemsArray.reduce((sum, item) => {
             const price = Number(item.price ?? item.product?.price ?? 0);
             const quantity = Number(item.quantity ?? 1);
             return sum + price * quantity;
@@ -65,7 +62,6 @@ function Checkout() {
       return;
     }
 
-    // Përgatitim DTO-në me fushat që i ka cartItems sipas Cart-it
     const purchaseDto = {
       userId: userId,
       totalAmount: totalPrice,
@@ -95,7 +91,6 @@ function Checkout() {
       const data = await response.json();
       alert(`Purchase completed successfully! Purchase ID: ${data.id}`);
 
-      // Pas përfundimit fshijmë cart-in në backend dhe local
       await fetch("http://localhost:5197/api/cart", {
         method: "DELETE",
         headers: {
