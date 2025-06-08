@@ -67,6 +67,12 @@ namespace Corta.Data
                .HasForeignKey(rt => rt.UserId)
                .OnDelete(DeleteBehavior.Cascade);
 
+              modelBuilder.Entity<Review>()
+               .HasOne(r => r.User)
+               .WithMany(u => u.Reviews)
+               .HasForeignKey(r => r.UserId)
+               .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

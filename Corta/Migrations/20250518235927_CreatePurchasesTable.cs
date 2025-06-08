@@ -18,7 +18,7 @@ namespace Corta.Migrations
         TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
         UserId = table.Column<int>(nullable: false),
         CreatedAt = table.Column<DateTime>(nullable: false)
-        // shto kolona të tjera nëse ke
+        
     },
     constraints: table =>
     {
@@ -44,7 +44,7 @@ namespace Corta.Migrations
         TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
         UserId = table.Column<int>(nullable: false),
         CreatedAt = table.Column<DateTime>(nullable: false)
-        // shto kolona të tjera nëse ke
+        
     },
     constraints: table =>
     {
