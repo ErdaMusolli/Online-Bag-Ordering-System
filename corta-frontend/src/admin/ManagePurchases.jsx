@@ -10,15 +10,29 @@ const ManagePurchases = () => {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const getStatusBadge = (status) => {
+    const statusColors = {
+      'In Process': 'bg-info text-white',
+      'Ready': 'bg-warning text-dark',
+      'Completed': 'bg-success text-white',
+      'Cancelled': 'bg-danger text-white',
+    };
+    return (
+      <span className={`badge ${statusColors[status] || 'bg-secondary'} px-3 py-2`}>
+        {status}
+      </span>
+    );
+  };
+
   useEffect(() => {
-    const checkAndFetchPurchases  = async () => {
+    const checkAndFetchPurchases = async () => {
       let token = localStorage.getItem('token');
 
       if (!token) {
         token = await getNewAccessToken();
         if (!token) {
-          navigate('/login'); 
-          return; 
+          navigate('/login');
+          return;
         }
       }
       try {
@@ -58,7 +72,11 @@ const ManagePurchases = () => {
       const purchaseToUpdate = purchases.find(p => p.id === purchaseId);
       if (!purchaseToUpdate) return;
 
-      const updatedPurchase = { ...purchaseToUpdate, status: newStatus };
+      const updatedPurchase = {
+        ...purchaseToUpdate,
+        status: newStatus,
+        purchaseItems: purchaseToUpdate.purchaseItems,
+      };
 
       const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}`, {
         method: 'PUT',
@@ -99,7 +117,6 @@ const ManagePurchases = () => {
         width: '100vw',
       }}
     >
-      
       <button
         className="btn btn-outline-secondary mb-3 align-self-start"
         onClick={() => navigate('/admin')}
@@ -137,6 +154,7 @@ const ManagePurchases = () => {
                   <th>Quantity</th>
                   <th>Total Amount</th>
                   <th>Created At</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -153,18 +171,23 @@ const ManagePurchases = () => {
                           <td>${purchase.totalAmount.toFixed(2)}</td>
                           <td>{new Date(purchase.createdAt).toLocaleString()}</td>
                           {idx === 0 && (
-                            <td rowSpan={purchase.purchaseItems.length}>
-                              <select
-                                className="form-select"
-                                value={purchase.status}
-                                onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
-                              >
-                                <option value="In Process">In Process</option>
-                                <option value="Ready">Ready</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Cancelled">Cancelled</option>
-                              </select>
-                            </td>
+                            <>
+                              <td rowSpan={purchase.purchaseItems.length}>
+                                {getStatusBadge(purchase.status)}
+                              </td>
+                              <td rowSpan={purchase.purchaseItems.length}>
+                                <select
+                                  className="form-select"
+                                  value={purchase.status}
+                                  onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
+                                >
+                                  <option value="In Process">In Process</option>
+                                  <option value="Ready">Ready</option>
+                                  <option value="Completed">Completed</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                </select>
+                              </td>
+                            </>
                           )}
                         </tr>
                       ))
@@ -175,6 +198,7 @@ const ManagePurchases = () => {
                         <td colSpan="2"><i>No items</i></td>
                         <td>${purchase.totalAmount.toFixed(2)}</td>
                         <td>{new Date(purchase.createdAt).toLocaleString()}</td>
+                        <td>{getStatusBadge(purchase.status)}</td>
                         <td>
                           <select
                             className="form-select"
@@ -192,7 +216,7 @@ const ManagePurchases = () => {
                   )
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center">
+                    <td colSpan="8" className="text-center">
                       No purchases found
                     </td>
                   </tr>
@@ -207,6 +231,7 @@ const ManagePurchases = () => {
 };
 
 export default ManagePurchases;
+
 
 
 

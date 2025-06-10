@@ -52,35 +52,38 @@ const NewsList = () => {
         return res.json();
       })
       .then((data) => {
-        console.log("Fetched data from API:", data); 
-        
-        const newsArray = data.$values || data;
+        try {
+          const rawNewsArray = data?.$values || data;
 
-        if (!Array.isArray(newsArray)) {
-          throw new Error('Fetched data is not an array');
-        }
-
-        const backendNews = newsArray.map(item => ({
-          id: item.id,
-          title: item.title,
-          description: item.content,
-          author: item.author,
-          date: item.datePublished,
-          image: item.imageUrl,
-          link: `/news/${item.id}`,
-        }));
-
-        const merged = [...staticNews];
-        backendNews.forEach((item) => {
-          if (!merged.find(news => news.id === item.id)) {
-            merged.push(item);
+          if (!Array.isArray(rawNewsArray)) {
+            throw new Error('Fetched data is not an array');
           }
-        });
 
-        setNewsItems(merged);
+          const backendNews = rawNewsArray.map(item => ({
+            id: item.id,
+            title: item.title,
+            description: item.content,
+            author: item.author,
+            date: item.datePublished,
+            image: item.imageUrl,
+            link: `/news/${item.id}`,
+          }));
+
+          const mergedNews = [...staticNews];
+          backendNews.forEach(item => {
+            if (!mergedNews.find(n => n.id === item.id)) {
+              mergedNews.push(item);
+            }
+          });
+
+          setNewsItems(mergedNews);
+        } catch (processingError) {
+          console.error("⚠️ Error processing fetched data:", processingError);
+          setError(processingError.message);
+        }
       })
       .catch((err) => {
-        console.error(err);
+        console.error("Fetch error:", err);
         setError(err.message);
       });
   }, []);
@@ -93,11 +96,12 @@ const NewsList = () => {
   }, [newsItems.length]);
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return <div className="alert alert-danger text-center mt-5">Error: {error}</div>;
   }
 
   return (
     <div className="w-100 px-4 mt-5 pt-5">
+
       <div className="position-relative mb-5" style={{ height: '400px' }}>
         {newsItems.map((item, index) => (
           <div
@@ -110,16 +114,21 @@ const NewsList = () => {
             }}
           >
             <img
-              src={item.image || item.imageUrl}
+              src={item.image}
               alt={item.title}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '10px',
+              }}
             />
             <div
               className="position-absolute bottom-0 start-0 m-3 text-white bg-dark bg-opacity-75 p-3 rounded"
               style={{ maxWidth: '70%' }}
             >
               <h2>{item.title}</h2>
-              <p>{new Date(item.date).toLocaleDateString() || item.date}</p>
+              <p>{item.date ? new Date(item.date).toLocaleDateString() : ''}</p>
               {item.description && <p>{item.description}</p>}
             </div>
           </div>
@@ -131,14 +140,14 @@ const NewsList = () => {
           <div key={item.id} className="col-md-4 mb-4">
             <a href={item.link}>
               <img
-                src={item.image || item.imageUrl}
+                src={item.image}
                 alt={item.title}
                 className="img-fluid rounded border"
                 style={{ width: '100%', height: '350px', objectFit: 'cover' }}
               />
             </a>
             <h4 className="mt-3">{item.title}</h4>
-            <p>{new Date(item.date).toLocaleDateString() || item.date}</p>
+            <p>{item.date ? new Date(item.date).toLocaleDateString() : ''}</p>
           </div>
         ))}
       </div>
@@ -147,6 +156,7 @@ const NewsList = () => {
 };
 
 export default NewsList;
+
 
 
 

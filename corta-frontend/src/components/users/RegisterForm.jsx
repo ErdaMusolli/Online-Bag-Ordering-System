@@ -82,8 +82,8 @@ const RegisterForm = () => {
           navigate('/login');
         }, 1500);
       } else {
-        const data = await response.json();
-        setError(data.message || 'Registration failed');
+        const data = await response.text();
+        setError(data.message || 'Email already exists');
         setSuccess('');
       }
     } catch {

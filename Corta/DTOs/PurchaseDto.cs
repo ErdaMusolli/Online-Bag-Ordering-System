@@ -8,6 +8,7 @@ namespace Corta.DTOs
         public int UserId { get; set; }
         public DateTime CreatedAt  { get; set; } 
         public decimal TotalAmount { get; set; } 
+        public string Status { get; set; } = "In Process";
         public List<PurchaseItemDto> PurchaseItems { get; set; } = new List<PurchaseItemDto>();
     }
 }

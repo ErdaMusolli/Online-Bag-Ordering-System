@@ -12,6 +12,8 @@ namespace Corta.Models
         
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
+        
+        public string Status { get; set; } = "In Process";
 
     
         public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();

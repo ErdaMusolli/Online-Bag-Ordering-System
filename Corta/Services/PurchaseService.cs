@@ -46,6 +46,7 @@ namespace Corta.Services
         UserId = purchaseDto.UserId,
         CreatedAt = DateTime.UtcNow,
         TotalAmount = purchaseDto.TotalAmount,
+        Status = purchaseDto.Status ?? "In Process",
         PurchaseItems = purchaseDto.PurchaseItems.Select(item => new PurchaseItem
         {
             ProductName = item.ProductName,
@@ -67,6 +68,7 @@ namespace Corta.Services
 
             purchase.UserId = purchaseDto.UserId;
             purchase.TotalAmount = purchaseDto.TotalAmount;
+            purchase.Status = purchaseDto.Status ?? purchase.Status;
 
             _context.PurchaseItems.RemoveRange(purchase.PurchaseItems);
             purchase.PurchaseItems = purchaseDto.PurchaseItems.Select(item => new PurchaseItem
