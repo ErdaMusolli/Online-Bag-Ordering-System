@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
+import { authFetch } from '../services/authFetch';
+import { getNewAccessToken } from '../services/tokenUtils';
 
 const ManagePurchases = () => {
   const navigate = useNavigate(); 
@@ -9,11 +11,20 @@ const ManagePurchases = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchPurchases = async () => {
+    const checkAndFetchPurchases  = async () => {
+      let token = localStorage.getItem('token');
+
+      if (!token) {
+        token = await getNewAccessToken();
+        if (!token) {
+          navigate('/login'); 
+          return; 
+        }
+      }
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const res = await fetch('http://localhost:5197/api/purchase', {
+        const res = await authFetch('http://localhost:5197/api/purchase', {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error('Failed to fetch purchases');
@@ -38,8 +49,8 @@ const ManagePurchases = () => {
         setLoading(false);
       }
     };
-    fetchPurchases();
-  }, []);
+    checkAndFetchPurchases();
+  }, [navigate]);
 
   const handleStatusChange = async (purchaseId, newStatus) => {
     try {

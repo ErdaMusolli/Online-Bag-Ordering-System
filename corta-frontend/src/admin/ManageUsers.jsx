@@ -13,7 +13,16 @@ const ManageUsers = () => {
   const [roleFilter, setRoleFilter] = useState('');
 
   useEffect(() => {
-  const fetchUsers = async () => {
+    const checkAndFetchUsers = async () => { 
+      let token = localStorage.getItem('token');
+
+      if (!token) {
+        token = await getNewAccessToken();
+        if (!token) {
+          navigate('/login'); 
+          return;
+        }
+      }
     try {
       const res = await authFetch('http://localhost:5197/api/users');
       if (!res.ok) throw new Error('Failed to fetch users');
@@ -25,9 +34,8 @@ const ManageUsers = () => {
     }
   };
 
-  fetchUsers();
-}, []);
-
+  checkAndFetchUsers();
+  }, [navigate]);
 
   const handleDelete = async (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this user?");
