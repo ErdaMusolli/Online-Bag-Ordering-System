@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
 const UserMenu = () => {
+  const iconStyle = { marginRight: '8px', fontSize: '1.1rem', verticalAlign: 'middle' };
+
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
 
@@ -41,6 +43,7 @@ const UserMenu = () => {
     localStorage.removeItem('refreshToken');
     navigate('/login');
   };
+  
 
  return (
   <div className="dropdown position: fixed">
@@ -61,8 +64,20 @@ const UserMenu = () => {
     </span>
   </li>
   <li><hr className="dropdown-divider" /></li>
-  <li><Link className="dropdown-item" to="/change-password">Change Password</Link></li>
-  <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+   <li><Link className="dropdown-item" to="/profile">
+            <i className="bi bi-person-fill" style={iconStyle} /> Personal Data
+          </Link></li>
+    <hr />
+   <li><Link className="dropdown-item" to="/profile/orders">
+            <i className="bi bi-bag-fill" style={iconStyle} /> Orders
+          </Link></li>
+  <li><Link className="dropdown-item" to="/profile/wishlist">
+            <i className="bi bi-heart-fill" style={iconStyle} /> Wishlist
+          </Link></li>
+   <hr />
+  <li><button className="dropdown-item" onClick={handleLogout}>
+            <i className="bi bi-box-arrow-right" style={iconStyle} /> Logout
+          </button></li>
 </ul>
 
 </div>
@@ -71,4 +86,3 @@ const UserMenu = () => {
 };
 
 export default UserMenu;
-

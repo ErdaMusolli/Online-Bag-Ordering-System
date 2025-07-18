@@ -30,6 +30,14 @@ import Checkout from './pages/Checkout';
 import ManagePurchases from './admin/ManagePurchases';
 import ManageNews from "./admin/ManageNews";
 import ChangePassword from './components/users/ChangePassword';
+import ProfileLayout from './pages/profile/ProfileLayout';
+import PersonalData from './pages/profile/PersonalData';
+import Orders from './pages/profile/Orders';
+import Wishlist from './pages/profile/Wishlist';
+import Ratings from './pages/profile/Ratings';
+
+
+
 
 
 function AppContent() {
@@ -71,8 +79,15 @@ function AppContent() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/manage-purchases" element={<ManagePurchases />} />
         <Route path="/manage-news" element={<ManageNews />} />
-        <Route path="/change-password" element={<ChangePassword />} />
-
+        <Route path="/profile" element={<ProfileLayout />}>
+        <Route path="personal-data" element={<PersonalData />} />
+  <Route path="orders" element={<Orders />} />
+  <Route path="wishlist" element={<Wishlist />} />
+  <Route path="change-password" element={<ChangePassword />} />
+  <Route path="ratings" element={<Ratings />} />
+  <Route index element={<PersonalData />} /> 
+</Route>
+        
       
 
       </Routes>

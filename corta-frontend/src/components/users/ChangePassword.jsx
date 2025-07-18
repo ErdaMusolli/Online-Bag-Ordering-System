@@ -71,9 +71,9 @@ const ChangePassword = () => {
     <div
       className="container-fluid bg-light d-flex justify-content-center align-items-center min-vh-100"
       style={{
-        paddingTop: '80px',
+        paddingTop: '50px',
         minHeight: '100vh',
-        width: '100vw',
+        width: '90vw',
         backgroundColor: '#f8f9fa',
       }}
       
