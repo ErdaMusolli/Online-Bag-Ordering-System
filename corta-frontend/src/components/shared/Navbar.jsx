@@ -28,7 +28,10 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-medium fixed-top">
+    <nav
+  className="navbar navbar-expand-lg fixed-top"
+  style={{ backgroundColor: "#e0e0e0",  height: "80px" }} 
+>
       <div className="container-fluid">
 
        <Link 

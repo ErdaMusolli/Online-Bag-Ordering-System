@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import PrivacyPolicy from './PrivacyPolicy'; 
-import TermsAndConditions from './TermsAndConditions';
-import RefundPolicy from './RefundPolicy';
+
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -119,11 +117,7 @@ const ContactForm = () => {
           </div>
         </div>
 
-        <footer className="mt-5 text-center text-muted">
-          <a href="/terms" className="me-3">Terms and Conditions</a>
-          <a href="/privacy-policy" className="me-3">Privacy Policy</a>
-          <a href="refund">Refund Policy</a>
-        </footer>
+        
         
       </div>
     </div>

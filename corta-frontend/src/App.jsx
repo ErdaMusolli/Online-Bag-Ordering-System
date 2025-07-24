@@ -40,6 +40,8 @@ import Ratings from './pages/profile/Ratings';
 
 
 
+
+
 function AppContent() {
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
