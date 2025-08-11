@@ -35,6 +35,7 @@ import PersonalData from './pages/profile/PersonalData';
 import Orders from './pages/profile/Orders';
 import Wishlist from './pages/profile/Wishlist';
 import Ratings from './pages/profile/Ratings';
+import OrderDetails from './pages/profile/OrderDetails'; 
 
 
 
@@ -88,6 +89,10 @@ function AppContent() {
   <Route path="change-password" element={<ChangePassword />} />
   <Route path="ratings" element={<Ratings />} />
   <Route index element={<PersonalData />} /> 
+  <Route path="/profile/order-details/:id" element={<OrderDetails />} />
+
+
+
 </Route>
         
       

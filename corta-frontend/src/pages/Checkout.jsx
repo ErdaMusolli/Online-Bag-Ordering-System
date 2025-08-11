@@ -70,6 +70,7 @@ function Checkout() {
         quantity: item.quantity || 1,
         price: item.price ?? item.product?.price ?? 0,
         productId: item.productId || item.id,
+        productImageUrl: item.imageUrl || item.product?.imageUrl || ""
       })),
     };
 

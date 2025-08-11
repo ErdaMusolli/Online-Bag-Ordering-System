@@ -16,6 +16,8 @@ namespace Corta.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
+        public string ProductImageUrl { get; set; } = string.Empty;
+
         [JsonIgnore]  
    public Purchase? Purchase { get; set; }
 }

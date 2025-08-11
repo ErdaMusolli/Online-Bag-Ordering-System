@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Corta.DTOs;
 using Corta.Services;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Corta.Controllers
 {
@@ -18,7 +20,7 @@ namespace Corta.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var purchases = await _purchaseService.GetAllAsync();
+            var purchases = await _purchaseService.GetAllDtoAsync();
             return Ok(purchases);
         }
 
@@ -28,25 +30,42 @@ namespace Corta.Controllers
             var purchase = await _purchaseService.GetByIdAsync(id);
             if (purchase == null)
                 return NotFound();
-            return Ok(purchase);
+
+            var dto = new PurchaseDto
+            {
+                UserId = purchase.UserId,
+                CreatedAt = purchase.CreatedAt,
+                TotalAmount = purchase.TotalAmount,
+                Status = purchase.Status,
+                PurchaseItems = purchase.PurchaseItems.Select(pi => new PurchaseItemDto
+                {
+                    ProductId = 0, 
+                    ProductName = pi.ProductName,
+                    Quantity = pi.Quantity,
+                    Price = pi.Price,
+                    ProductImageUrl = pi.ProductImageUrl
+                }).ToList()
+            };
+
+            return Ok(dto);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] PurchaseDto dto)
         {
             try
-    {
-        var purchase = await _purchaseService.CreateAsync(dto);
-        return Ok(purchase);
-    }
-    catch (ArgumentException ex)
-    {
-        return BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { error = ex.Message });
-    }
+            {
+                var purchase = await _purchaseService.CreateAsync(dto);
+                return Ok(purchase);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
@@ -66,6 +85,8 @@ namespace Corta.Controllers
         }
     }
 }
+
+
 
 
 

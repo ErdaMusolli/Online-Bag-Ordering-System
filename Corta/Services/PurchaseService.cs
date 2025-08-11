@@ -5,6 +5,7 @@ using Corta.DTOs;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace Corta.Services
 {
@@ -17,10 +18,31 @@ namespace Corta.Services
             _context = context;
         }
 
-        public async Task<List<Purchase>> GetAllAsync()
+        public async Task<List<PurchaseDto>> GetAllDtoAsync()
         {
-            return await _context.Purchases.Include(p => p.PurchaseItems).ToListAsync();
+            var purchases = await _context.Purchases
+                .Include(p => p.PurchaseItems)
+                .ToListAsync();
+
+            var purchaseDtos = purchases.Select(p => new PurchaseDto
+            {
+                Id = p.Id,
+                UserId = p.UserId,
+                CreatedAt = p.CreatedAt,
+                TotalAmount = p.TotalAmount,
+                Status = p.Status,
+                PurchaseItems = p.PurchaseItems.Select(pi => new PurchaseItemDto
+                {
+                    ProductName = pi.ProductName,
+                    Quantity = pi.Quantity,
+                    Price = pi.Price,
+                    ProductImageUrl = pi.ProductImageUrl
+                }).ToList()
+            }).ToList();
+
+            return purchaseDtos;
         }
+
 
         public async Task<Purchase?> GetByIdAsync(int id)
         {
@@ -30,53 +52,72 @@ namespace Corta.Services
         }
 
         public async Task<Purchase> CreateAsync(PurchaseDto purchaseDto)
-{
-    if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
-{
-    throw new ArgumentException("Purchase must have at least one item.");
-}
-    Console.WriteLine($"UserId: {purchaseDto.UserId}, TotalAmount: {purchaseDto.TotalAmount}");
-    foreach(var item in purchaseDto.PurchaseItems)
-    {
-        Console.WriteLine($"Item: ProductName={item.ProductName}, Quantity={item.Quantity}, Price={item.Price}");
-    }
-
-    var purchase = new Purchase
-    {
-        UserId = purchaseDto.UserId,
-        CreatedAt = DateTime.UtcNow,
-        TotalAmount = purchaseDto.TotalAmount,
-        Status = purchaseDto.Status ?? "In Process",
-        PurchaseItems = purchaseDto.PurchaseItems.Select(item => new PurchaseItem
         {
-            ProductName = item.ProductName,
-            Quantity = item.Quantity,
-            Price = item.Price
-        }).ToList()
-    };
+            if (purchaseDto.PurchaseItems == null || !purchaseDto.PurchaseItems.Any())
+                throw new ArgumentException("Purchase must have at least one item.");
 
-    _context.Purchases.Add(purchase);
-    await _context.SaveChangesAsync();
+            var purchaseItems = new List<PurchaseItem>();
 
-    return purchase;
-}
+            foreach (var itemDto in purchaseDto.PurchaseItems)
+            {
+                var product = await _context.Products.FindAsync(itemDto.ProductId);
+
+                purchaseItems.Add(new PurchaseItem
+                {
+                    ProductName = itemDto.ProductName,
+                    Quantity = itemDto.Quantity,
+                    Price = itemDto.Price,
+                    ProductImageUrl = product?.ImageUrl ?? ""
+                });
+            }
+
+            var purchase = new Purchase
+            {
+                UserId = purchaseDto.UserId,
+                CreatedAt = DateTime.UtcNow,
+                TotalAmount = purchaseDto.TotalAmount,
+                Status = purchaseDto.Status ?? "In Process",
+                PurchaseItems = purchaseItems
+            };
+
+            _context.Purchases.Add(purchase);
+            await _context.SaveChangesAsync();
+
+            return purchase;
+        }
 
         public async Task<bool> UpdateAsync(int id, PurchaseDto purchaseDto)
         {
-            var purchase = await _context.Purchases.Include(p => p.PurchaseItems).FirstOrDefaultAsync(p => p.Id == id);
-            if (purchase == null) return false;
+            var purchase = await _context.Purchases
+                .Include(p => p.PurchaseItems)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (purchase == null)
+                return false;
 
             purchase.UserId = purchaseDto.UserId;
             purchase.TotalAmount = purchaseDto.TotalAmount;
             purchase.Status = purchaseDto.Status ?? purchase.Status;
 
             _context.PurchaseItems.RemoveRange(purchase.PurchaseItems);
-            purchase.PurchaseItems = purchaseDto.PurchaseItems.Select(item => new PurchaseItem
+
+            var updatedItems = new List<PurchaseItem>();
+
+            foreach (var itemDto in purchaseDto.PurchaseItems)
             {
-                ProductName = item.ProductName,
-                Quantity = item.Quantity,
-                Price = item.Price
-            }).ToList();
+                var product = await _context.Products.FindAsync(itemDto.ProductId);
+
+                updatedItems.Add(new PurchaseItem
+                {
+                    PurchaseId = purchase.Id,
+                    ProductName = itemDto.ProductName,
+                    Quantity = itemDto.Quantity,
+                    Price = itemDto.Price,
+                    ProductImageUrl = product?.ImageUrl ?? ""
+                });
+            }
+
+            purchase.PurchaseItems = updatedItems;
 
             await _context.SaveChangesAsync();
             return true;
@@ -84,11 +125,16 @@ namespace Corta.Services
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var purchase = await _context.Purchases.Include(p => p.PurchaseItems).FirstOrDefaultAsync(p => p.Id == id);
-            if (purchase == null) return false;
+            var purchase = await _context.Purchases
+                .Include(p => p.PurchaseItems)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (purchase == null)
+                return false;
 
             _context.PurchaseItems.RemoveRange(purchase.PurchaseItems);
             _context.Purchases.Remove(purchase);
+
             await _context.SaveChangesAsync();
 
             return true;
