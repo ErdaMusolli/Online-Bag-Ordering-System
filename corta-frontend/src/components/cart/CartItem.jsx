@@ -3,12 +3,12 @@ function CartItem({ item, onRemove, onQuantityChange }) {
 
   const handleDecrease = () => {
     if (item.quantity > 1) {
-      onQuantityChange(item.productId, item.quantity - 1);
+      onQuantityChange(item.id, item.size, item.quantity - 1);
     }
   };
 
   const handleIncrease = () => {
-    onQuantityChange(item.productId, item.quantity + 1);
+    onQuantityChange(item.id, item.size, item.quantity + 1);
   };
 
   return (
@@ -20,19 +20,41 @@ function CartItem({ item, onRemove, onQuantityChange }) {
         <div className="col-md-7">
           <div className="card-body">
             <h5 className="card-title">{item.name}</h5>
-            <p className="card-text">{item.description}</p>
-            <p className="card-text fw-bold">Price: {item.price}€</p>
+            
+            {item.size && (
+              <p className="card-text text-muted mb-1" style={{ fontSize: "14px" }}>
+                Size: {item.size}
+              </p>
+            )}
+
+            
+            
+            <p className="card-text fw-bold">
+              Price: {item.price.toFixed(2)} €
+            </p>
+
             <div className="d-flex align-items-center gap-2">
-              <button className="btn btn-sm btn-outline-secondary" onClick={handleDecrease} disabled={item.quantity <= 1}>-</button>
+              <button 
+                className="btn btn-sm btn-outline-secondary" 
+                onClick={handleDecrease} 
+                disabled={item.quantity <= 1}
+              >
+                -
+              </button>
               <span>Quantity: {item.quantity}</span>
-              <button className="btn btn-sm btn-outline-secondary" onClick={handleIncrease}>+</button>
+              <button 
+                className="btn btn-sm btn-outline-secondary" 
+                onClick={handleIncrease}
+              >
+                +
+              </button>
             </div>
           </div>
         </div>
         <div className="col-md-3 text-end pe-3">
           <button 
             className="btn btn-danger"
-            onClick={() => onRemove(item.productId)}
+            onClick={() => onRemove(item.id, item.size)}
           >
             Delete
           </button>

@@ -16,7 +16,7 @@ const Orders = () => {
           },
         });
 
-        if (!response.ok) throw new Error("Gabim gjatë marrjes së porosive.");
+        if (!response.ok) throw new Error("Error fetching orders.");
         const data = await response.json();
 
         const ordersArray = data.$values || data;
@@ -32,7 +32,16 @@ const Orders = () => {
   }, []);
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div
+      style={{
+        width: "78vw",
+        height: "100vh",
+        padding: "20px",
+        boxSizing: "border-box",
+        overflowY: "auto",
+        backgroundColor: '#f8f9fa', 
+      }}
+    >
       <h2
         className="mb-5 text-center fw-bold"
         style={{ fontFamily: "Georgia, serif", color: "#6a1b9a", fontSize: "3rem" }}
@@ -42,7 +51,7 @@ const Orders = () => {
 
       {loading && (
         <div className="text-center" style={{ fontSize: "1.5rem" }}>
-          Duke u ngarkuar...
+          Loading...
         </div>
       )}
 
@@ -62,7 +71,7 @@ const Orders = () => {
           role="alert"
           style={{ fontSize: "1.5rem" }}
         >
-          Nuk keni bërë ende ndonjë porosi.
+          You haven't placed any orders yet.
         </div>
       )}
 
@@ -78,26 +87,26 @@ const Orders = () => {
         return (
           <div
             key={purchaseId}
-            className="row border rounded p-4 mb-4 align-items-center"
+            className="row border rounded p-3 mb-3 align-items-center"
             style={{ borderColor: "#ddd", backgroundColor: "#fafafa" }}
           >
             <div
               className="col-md-8 col-sm-12"
-              style={{ fontSize: "1.3rem", lineHeight: 1.4 }}
+              style={{ fontSize: "1.1rem", lineHeight: 1.3 }}
             >
               <div>
-                <strong>Numri i porosisë:</strong> {purchaseId}
+                <strong>Order Number:</strong> {purchaseId}
               </div>
               <div>
-                <strong>Data e porosisë:</strong>{" "}
-                {new Date(order.createdAt).toLocaleDateString("sq-AL")}
+                <strong>Order Date:</strong>{" "}
+                {new Date(order.createdAt).toLocaleDateString("en-US")}
               </div>
               <div>
-                <strong>Statusi i porosisë:</strong>{" "}
+                <strong>Order Status:</strong>{" "}
                 <span className="text-primary">{order.status}</span>
               </div>
               <div>
-                <strong>Totali i porosisë:</strong> {total.toFixed(2)}€
+                <strong>Order Total:</strong> {total.toFixed(2)}€
               </div>
             </div>
 
@@ -108,7 +117,7 @@ const Orders = () => {
                 className="text-decoration-none fw-semibold text-primary mb-3"
                 style={{ fontSize: "1.2rem" }}
               >
-                Detajet e porosisë →
+                View Order Details →
               </Link>
 
               <img
@@ -117,9 +126,9 @@ const Orders = () => {
                     ? `/${firstImage.replace("public/", "")}`
                     : "/default.jpg"
                 }
-                alt="Produkt"
+                alt="Product"
                 style={{
-                  width: "180px",
+                  width: "140px",
                   height: "180px",
                   objectFit: "cover",
                   border: "1px solid #ccc",
@@ -139,27 +148,3 @@ const Orders = () => {
 };
 
 export default Orders;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

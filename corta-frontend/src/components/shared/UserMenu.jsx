@@ -46,7 +46,7 @@ const UserMenu = () => {
   
 
  return (
-  <div className="dropdown position: fixed">
+  <div className="dropdown" style={{ position: 'relative' }}>
 <button
   className="btn btn-outline-dark dropdown-toggle rounded-circle"
   style={{ width: '40px', height: '40px', textAlign: 'center', padding: 0 }}
@@ -57,7 +57,11 @@ const UserMenu = () => {
 >
   {email ? email.charAt(0).toUpperCase() : 'U'}
 </button>
-<ul className="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuDropdown">
+<ul
+    className="dropdown-menu dropdown-menu-end"
+    aria-labelledby="userMenuDropdown"
+    style={{ marginTop: '8px' }}
+  >
   <li>
     <span className="dropdown-item-text" style={{ fontWeight: 'bold', color: 'gray' }}>
       {email}

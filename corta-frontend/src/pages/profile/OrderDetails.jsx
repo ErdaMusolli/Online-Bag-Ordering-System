@@ -15,17 +15,17 @@ const OrderDetails = () => {
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          color: "red",
+          flexDirection: "column",
           padding: "20px",
           textAlign: "center",
-          flexDirection: "column",
+          color: "red",
         }}
       >
-        Nuk u gjet informacioni i porosisë. Ju lutem kthehuni tek lista e porosive.
+        Order information not found. Please return to the orders list.
         <button
           onClick={() => navigate(-1)}
           style={{
-            marginTop: "40px",
+            marginTop: "20px",
             padding: "10px 18px",
             backgroundColor: "#007bff",
             color: "#fff",
@@ -42,37 +42,30 @@ const OrderDetails = () => {
     );
   }
 
-  const items = order.purchaseItems?.$values
-    ? order.purchaseItems.$values
-    : order.purchaseItems || [];
-
-  const purchaseId = order.id;
-
+  const items = order.purchaseItems?.$values || order.purchaseItems || [];
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const purchaseId = order?.id;
+
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "200%",
-        paddingTop: "80px",
-        paddingBottom: "40px",
-        backgroundColor: "#f8f9fa",
-        fontFamily: "Arial, sans-serif",
+     <div
+        style={{
+        width: "78vw",
+        height: "100vh",
+        padding: "20px",
         boxSizing: "border-box",
-        display: "flex",
-        justifyContent: "center",
+        overflowY: "auto",
+        backgroundColor: '#f8f9fa', 
       }}
     >
       <div
-        style={{
-          width: "100%",
+         style={{
+          flex: 1,
+          width: "90%",
           maxWidth: "1000px",
-          backgroundColor: "#fff",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-          boxSizing: "border-box",
+          margin: "0 auto",
+          paddingTop: "80px",
+          paddingBottom: "40px",
         }}
       >
         <button
@@ -93,7 +86,7 @@ const OrderDetails = () => {
         </button>
 
         <h2
-          style={{
+         style={{
             fontSize: "28px",
             fontWeight: "700",
             marginBottom: "30px",
@@ -103,7 +96,7 @@ const OrderDetails = () => {
             letterSpacing: "1.5px",
           }}
         >
-          <strong>Numri i porosisë:</strong> {purchaseId}
+          <strong>Order Number:</strong> {purchaseId}
         </h2>
 
         <div
@@ -120,9 +113,9 @@ const OrderDetails = () => {
           }}
         >
           <div style={{ flex: "1 1 150px", minWidth: "150px" }}>
-            <div>Data e porosisë:</div>
+            <div>Order Date:</div>
             <div style={{ fontWeight: "400", marginTop: "4px" }}>
-              {new Date(order.createdAt).toLocaleDateString("sq-AL", {
+              {new Date(order.createdAt).toLocaleDateString("en-Us", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
@@ -150,7 +143,7 @@ const OrderDetails = () => {
         </div>
 
         <h2 style={{ fontWeight: "600", fontSize: "20px", marginBottom: "15px" }}>
-          Artikujt në porosi
+          Items in Order
         </h2>
 
         <div>
@@ -198,10 +191,10 @@ const OrderDetails = () => {
                   {item.productName}
                 </p>
                 <p style={{ margin: "6px 0 0", color: "#555", fontSize: "14px" }}>
-                  Sasia: {item.quantity}
+                  Quantity: {item.quantity}
                 </p>
                 <p style={{ margin: "4px 0 0", color: "#555", fontSize: "14px" }}>
-                  Çmimi njësi: {item.price.toFixed(2)}€
+                  Unit Price: {item.price.toFixed(2)}€
                 </p>
               </div>
               <div
@@ -230,10 +223,12 @@ const OrderDetails = () => {
             color: "#007bff",
           }}
         >
-          Totali i porosisë: {total.toFixed(2)}€
+          Order Total: {total.toFixed(2)}€
         </div>
       </div>
+       
     </div>
+    
   );
 };
 

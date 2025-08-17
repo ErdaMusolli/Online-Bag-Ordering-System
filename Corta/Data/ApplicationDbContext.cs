@@ -20,6 +20,7 @@ namespace Corta.Data
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<ProductImage> ProductImages { get; set; }
 
 
 
@@ -67,11 +68,11 @@ namespace Corta.Data
                .HasForeignKey(rt => rt.UserId)
                .OnDelete(DeleteBehavior.Cascade);
 
-              modelBuilder.Entity<Review>()
-               .HasOne(r => r.User)
-               .WithMany(u => u.Reviews)
-               .HasForeignKey(r => r.UserId)
-               .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<Review>()
+             .HasOne(r => r.User)
+             .WithMany(u => u.Reviews)
+             .HasForeignKey(r => r.UserId)
+             .OnDelete(DeleteBehavior.Cascade);
 
         }
     }

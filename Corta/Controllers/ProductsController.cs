@@ -24,13 +24,31 @@ namespace Corta.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+       public async Task<IActionResult> GetById(int id)
+{
+    var product = await _productService.GetByIdAsync(id);
+    if (product == null)
+        return NotFound();
+
+    var response = new
+    {
+        product.Id,
+        product.Name,
+        product.Description,
+        product.Price,
+        product.Stock,
+        product.ImageUrl,
+        product.Size,
+        ProductImages = product.ProductImages.Select(pi => new
         {
-            var product = await _productService.GetByIdAsync(id);
-            if (product == null)
-                return NotFound();
-            return Ok(product);
-        }
+            pi.Id,
+            pi.ProductId,
+            pi.ImageUrl
+        }).ToList()
+    };
+
+    return Ok(response);
+}
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ProductDto dto)

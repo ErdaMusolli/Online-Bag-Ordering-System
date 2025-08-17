@@ -1,33 +1,82 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import ProductList from "../components/products/ProductList";
 
-function Store() {
+function Store({ cart, setCart }) {
   const [products, setProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState(null);
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
-    if (savedToken) {
-      setToken(savedToken);
-      setIsLoggedIn(true);
-    }
+    if (savedToken) setToken(savedToken);
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5197/api/Products")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch products");
-        return res.json();
-      })
+    fetch("http://localhost:5197/api/products")
+      .then((res) => res.json())
       .then((data) => {
-        setProducts(data.$values || []);
+        const productsArray = data.$values || data.products || [];
+        setProducts(productsArray);
       })
-      .catch((err) => console.error("Error:", err));
+      .catch(console.error);
   }, []);
+
+  
+  const handleAddToCart = (product, quantity = 1, size = "S") => {
+    const productToAdd = { ...product, quantity, size, productId: product.id };
+
+    if (token) {
+      return fetch("http://localhost:5197/api/cart/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId: product.id, quantity, size }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to add to cart");
+          const existing = cart.find(
+            (i) => i.productId === product.id && i.size === size
+          );
+          let updatedCart;
+          if (existing) {
+            updatedCart = cart.map((i) =>
+              i.productId === product.id && i.size === size
+                ? { ...i, quantity: i.quantity + quantity }
+                : i
+            );
+          } else {
+            updatedCart = [...cart, productToAdd];
+          }
+          setCart(updatedCart);
+          return updatedCart;
+        })
+        .catch(console.error);
+    } else {
+      const existing = cart.find(
+        (i) => i.productId === product.id && i.size === size
+      );
+      let updatedCart;
+      if (existing) {
+        updatedCart = cart.map((i) =>
+          i.productId === product.id && i.size === size
+            ? { ...i, quantity: i.quantity + quantity }
+            : i
+        );
+      } else {
+        updatedCart = [...cart, productToAdd];
+      }
+      setCart(updatedCart);
+      localStorage.setItem(
+        "guest_cart",
+        JSON.stringify(
+          updatedCart.map(({ productId, ...rest }) => ({ id: productId, ...rest }))
+        )
+      );
+      return Promise.resolve(updatedCart);
+    }
+  };
 
   const sortedProducts = [...products].sort((a, b) => {
     if (sortOrder === "asc") return a.price - b.price;
@@ -36,20 +85,22 @@ function Store() {
   });
 
   return (
-    <div
-      className="container-fluid mt-4 bg-light min-vh-100"
-      style={{ paddingTop: "56px" }}
-    >
+    <div className="container-fluid mt-4" style={{ paddingTop: "120px" }}>
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
         <h1
           className="text-center flex-grow-1 mb-3 mb-md-0"
-          style={{ fontFamily: "Libre Baskerville, serif" }}
+          style={{ fontFamily: "'Libre Baskerville', serif" }}
         >
           The Boutique
         </h1>
         <select
           className="form-select form-select-sm w-auto"
-          style={{ fontSize: "1.10rem", padding: "0.37rem 1.8rem", borderRadius: "1rem" }}
+          style={{
+            fontSize: "1.1rem",
+            padding: "0.37rem 1.8rem",
+            borderRadius: "1rem",
+            fontFamily: "'Roboto', sans-serif",
+          }}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
         >
@@ -59,24 +110,7 @@ function Store() {
         </select>
       </div>
 
-      <div className="row g-3">
-        {sortedProducts.map((product) => (
-          <div key={product.id} className="col-md-4">
-            <div className="card p-3 h-100">
-              <img
-                src={`/${product.imageUrl}`}
-                alt={product.name}
-                className="img-fluid"
-              />
-              <p>{product.name}</p>
-              <p>
-                <strong>{product.price}€</strong>
-              </p>
-
-            </div>
-          </div>
-        ))}
-      </div>
+      <ProductList products={sortedProducts} onAddToCart={handleAddToCart} />
     </div>
   );
 }
