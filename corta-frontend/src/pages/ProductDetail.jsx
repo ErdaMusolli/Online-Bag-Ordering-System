@@ -2,6 +2,18 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 
+const getImageUrl = (url) => {
+  if (!url) return "/placeholder.jpg"; 
+
+  if (url.startsWith("http")) return url; 
+
+  if (url.startsWith("/images/")) {
+    return `http://localhost:5197${url}`;
+  }
+
+  return `http://localhost:5197/images/${url}`;
+};
+
 function ProductDetail() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -9,27 +21,34 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("S");
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext); 
+  const { addToCart } = useContext(CartContext);
 
- useEffect(() => {
-  fetch(`http://localhost:5197/api/products/${id}`)
-    .then((res) => res.json())
-    .then((data) => setProduct(data))
-    .catch(console.error);
-}, [id]);
+  useEffect(() => {
+    fetch(`http://localhost:5197/api/products/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProduct(data);
+      })
+      .catch(console.error);
+  }, [id]);
 
   if (!product) return <p className="text-center mt-5">Loading...</p>;
 
-  const productImagesArray = product.productImages?.$values || [];
-  const images = [product.imageUrl, ...productImagesArray.map((pi) => pi.imageUrl)];
+  const productImagesArray = Array.isArray(product.productImages)
+    ? product.productImages
+    : Array.isArray(product.productImages?.$values)
+    ? product.productImages.$values
+    : [];
+
+  const images = [product.imageUrl, ...productImagesArray.map((pi) => pi.imageUrl)].filter(Boolean);
 
   const handlePrev = () => setMainIndex((mainIndex - 1 + images.length) % images.length);
   const handleNext = () => setMainIndex((mainIndex + 1) % images.length);
 
   const handleAddToCart = () => {
     try {
-      addToCart(product, quantity, size); 
-      navigate("/cart"); 
+      addToCart(product, quantity, size);
+      navigate("/cart");
     } catch (err) {
       console.error(err);
       alert("Failed to add product to cart");
@@ -42,7 +61,7 @@ function ProductDetail() {
         <div className="col-12 col-md-6 mb-5">
           <div className="position-relative d-flex justify-content-center">
             <img
-              src={"/" + images[mainIndex]}
+              src={getImageUrl(images[mainIndex])}
               alt={product.name}
               className="img-fluid"
               style={{
@@ -72,7 +91,7 @@ function ProductDetail() {
             {images.map((img, idx) => (
               <img
                 key={idx}
-                src={"/" + img}
+                src={getImageUrl(img)}
                 alt={`${product.name}-${idx}`}
                 className="img-thumbnail"
                 style={{
@@ -94,11 +113,7 @@ function ProductDetail() {
 
           <div className="mb-3" style={{ maxWidth: "150px" }}>
             <label className="form-label">Size:</label>
-            <select
-              className="form-select"
-              value={size}
-              onChange={(e) => setSize(e.target.value)}
-            >
+            <select className="form-select" value={size} onChange={(e) => setSize(e.target.value)}>
               <option value="S">S</option>
               <option value="M">M</option>
               <option value="L">L</option>

@@ -4,6 +4,12 @@ import CartItem from "../components/cart/CartItem";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { CartContext } from "../context/CartContext";
 
+const getImageUrl = (url) => {
+  if (!url) return "/placeholder.jpg"; 
+  if (url.startsWith("http")) return url; 
+  return `http://localhost:5197${url.startsWith("/images/") ? url : `/images/${url}`}`;
+};
+
 function getUserIdFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -14,25 +20,35 @@ function getUserIdFromToken() {
 
 function Cart() {
   const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart, setCartItems } = useContext(CartContext);
+  const [products, setProducts] = useState([]);
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupProduct, setPopupProduct] = useState(null);
   const [popupQuantity, setPopupQuantity] = useState(1);
   const [popupSize, setPopupSize] = useState("");
-  const [userId, setUserId] = useState(getUserIdFromToken());
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleStorage = () => {
-      const id = getUserIdFromToken();
-      setUserId(id);
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch("http://localhost:5197/api/products");
+      if (res.ok) {
+        const data = await res.json();
 
-      const storedCart = JSON.parse(localStorage.getItem(id ? `cart_${id}` : "cart_guest") || "[]");
-      setCartItems(storedCart);
-    };
+        const list = data?.$values ?? data;
 
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [setCartItems]);
+        const productsWithSizes = (Array.isArray(list) ? list : []).map(p => ({
+          ...p,
+            sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ["S", "M", "L"] 
+        }));
+
+        setProducts(productsWithSizes);
+      }
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+    }
+  };
+  fetchProducts();
+}, []);
 
   useEffect(() => {
     if (popupProduct) {
@@ -52,14 +68,8 @@ function Cart() {
   const handleCheckout = () => navigate("/checkout");
   const handleShopNow = () => navigate("/store");
 
-  const recommendedProducts = [
-    { id: 2, imageUrl: "Product2.jpg", name: "Urban Denim",  price: 68.0, sizes: ["S", "M", "L"] },
-    { id: 6, imageUrl: "Product6.jpg", name: "Kyoto Bamboo Bag",  price: 65.0, sizes: ["S", "M", "L"] },
-    { id: 3, imageUrl: "Product3.jpg", name: "Ocean Breeze Linen",  price: 76.0, sizes: ["S", "M", "L"] },
-    { id: 1, imageUrl: "Product1.jpg", name: "Chic Corduroy Bag",  price: 65.0, sizes: ["S", "M", "L"] },
-    { id: 5, imageUrl: "Product5.jpg", name: "Eco Cedar Bag",  price: 65.0, sizes: ["S", "M", "L"] },
-    { id: 9, imageUrl: "Product9.jpg", name: "Seaside Linen Bag",  price: 70.0, sizes: ["S", "M", "L"] },
-  ];
+const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
+
 
   return (
     <div style={{ minHeight: "100vh", width: "100vw", paddingBottom: "120px", backgroundColor: "#f8f9fa", paddingTop: "80px" }}>
@@ -81,10 +91,19 @@ function Cart() {
           <div style={{ marginTop: "40px" }}>
             <h3>Recommended for you</h3>
             <div className="row g-3 justify-content-center">
-              {recommendedProducts.map(prod => (
+              {recommendedProducts.map((prod) => (
                 <div key={prod.id} className="col-md-4">
-                  <div className="card p-3 h-100" style={{ cursor: "pointer" }} onClick={() => { setPopupProduct(prod); setPopupVisible(true); }}>
-                    <img src={`/${prod.imageUrl}`} alt={prod.name} className="img-fluid" style={{ borderRadius: "6px", marginBottom: "8px", objectFit: "cover", height: "600px", width: "100%" }} />
+                  <div
+                    className="card p-3 h-100"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => { setPopupProduct(prod); setPopupVisible(true); }}
+                  >
+                    <img
+                      src={getImageUrl(prod.imageUrl)}
+                      alt={prod.name}
+                      className="img-fluid"
+                      style={{ borderRadius: "6px", marginBottom: "8px", objectFit: "cover", height: "600px", width: "100%" }}
+                    />
                     <p style={{ fontWeight: "600", fontSize: "16px" }}>{prod.name}</p>
                     <p style={{ color: "#007bff", fontWeight: "bold" }}>{prod.price.toFixed(2)}€</p>
                   </div>
@@ -120,7 +139,7 @@ function Cart() {
             onClick={e => e.stopPropagation()}
             style={{ backgroundColor: "white", padding: "20px", borderRadius: "10px", maxWidth: "400px", width: "90%", textAlign: "center" }}
           >
-            <img src={`/${popupProduct.imageUrl}`} alt={popupProduct.name} style={{ width: "100%", maxHeight: "250px", objectFit: "contain", borderRadius: "8px", backgroundColor: "#f0f0f0" }} />
+            <img src={getImageUrl(popupProduct.imageUrl)} alt={popupProduct.name} style={{ width: "100%", maxHeight: "250px", objectFit: "contain", borderRadius: "8px", backgroundColor: "#f0f0f0" }} />
             <h3 style={{ marginTop: "15px" }}>{popupProduct.name}</h3>
             <p style={{ fontWeight: "bold", color: "#007bff" }}>{popupProduct.price.toFixed(2)}€</p>
 

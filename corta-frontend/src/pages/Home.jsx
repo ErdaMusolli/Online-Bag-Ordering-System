@@ -5,30 +5,30 @@ import StarRating from '../components/StarRating';
 import Store from './Store'; 
 import ContactForm from '../components/ContactForm/ContactForm';
 
+const getImageUrl=(url)=> url ? `http://localhost:5197${url}` : '/placeholder.jpg';
 
 
 const categories = [
-  { id: 1, name: 'Tote Bags', image: '/Product1.jpg' },
-  { id: 2, name: 'Dresses', image: '/Product2.jpg' },
-  { id: 3, name: 'Beach Bags', image: '/Product3.jpg' },
-  { id: 4, name: 'Shoes' , image: '/Product6.jpg'},
-  { id: 5, name: 'Jeans' , image: '/Product8.jpg'},
-
+   { id: 1, name: 'Tote Bags', image: '/images/7f1beec4-d7f0-4129-a692-daa239b24bfa.jpg' },
+  { id: 2, name: 'Denim Bags', image: '/images/1af37744-7d3d-4c60-88f5-3e766924adec.jpg' },
+  { id: 3, name: 'Linen Bags', image: '/images/7f16e966-7aff-44c7-99c2-680196ebdfbc.jpg' },
+  { id: 4, name: 'Canvas Bags', image: '/images/833bc46a-9a54-4bcd-b3c3-5cd5d0d88088.jpg' },
+  { id: 5, name: 'Bamboo Bags', image: '/images/c67b8146-0d72-4b1f-918a-f4947e3b73b7.jpg' },
 ];
 const recommendedProducts = [
-  { id: 1, name: 'Organic Backpack', price: '$49', image: '/Product4.jpg' },
-  { id: 2, name: 'Travel Duffel', price: '$79', image: '/Product5.jpg' },
-  { id: 3, name: 'Reusable Tote', price: '$29', image: '/Product6.jpg' },
-];
+  { id: 1, name: 'Chic Corduroy Bag', price: '$65', image: '/images/7f1beec4-d7f0-4129-a692-daa239b24bfa.jpg' },
+  { id: 2, name: 'Urban Denim Bag', price: '$65', image: '/images/1af37744-7d3d-4c60-88f5-3e766924adec.jpg' },
+  { id: 3, name: 'Ocean Breeze Linen Bag', price: '$70', image: '/images/7f16e966-7aff-44c7-99c2-680196ebdfbc.jpg' },
+]
 const newArrivals = [
-  { id: 101, name: 'New Eco Bag', price: '$59', image: '/Product7.jpg' },
-  { id: 102, name: 'Stylish Travel Bag', price: '$89', image: '/Product8.jpg' },
-  { id: 103, name: 'Compact Tote', price: '$39', image: '/Product9.jpg' },
+    { id: 101, name: 'Canvas Coast Bag', price: '$55', image: '/images/833bc46a-9a54-4bcd-b3c3-5cd5d0d88088.jpg' },
+  { id: 102, name: 'Eco Cedar Bag', price: '$58', image: '/images/4089e5b6-daba-46b1-8593-7470d6bb1d6f.jpg' },
+  { id: 103, name: 'Kyoto Bamboo Bag', price: '$60', image: '/images/c67b8146-0d72-4b1f-918a-f4947e3b73b7.jpg' },
 ];
 
 const specialOffers = [
-  { id: 201, name: 'Limited Edition Backpack', originalPrice: '$99', discountedPrice: '$79', image: '/Product10.jpg' },
-  { id: 202, name: 'Small backpack', originalPrice: '$25', discountedPrice: '$19', image: '/Product12.jpg' },
+   { id: 201, name: 'Denim Wanderer Bag', originalPrice: '$50', discountedPrice: '$42', image: '/images/5d98c398-b310-437f-b692-ccc3d3c573ef.jpg' },
+  { id: 202, name: 'Bamboo Temple Bag', originalPrice: '$70', discountedPrice: '$65', image: '/images/ec168d28-9c53-41ab-93d2-e1a625d69984.jpg' },
 ];
 
 
@@ -80,10 +80,10 @@ export default function Home() {
     }}
   >
     <img
-      src={category.image}
-      alt={category.name}
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-    />
+  src={getImageUrl(category.image)}
+  alt={category.name}
+  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+/>
   </div>
   <p className="mt-2">{category.name}</p>
 </div>
@@ -103,11 +103,11 @@ export default function Home() {
             <div key={product.id} className="col-md-4 mb-4">
               <div className="card shadow-sm h-100" style={{ backgroundColor: 'transparent', border: 'none' }}>
                 <img
-                  src={product.image}
-                  alt={product.name}
-                  className="card-img-top"
-                  style={{ height: '250px', objectFit: 'cover' }}
-                />
+  src={getImageUrl(product.image)}
+  alt={product.name}
+  className="card-img-top"
+  style={{ height: '250px', objectFit: 'cover' }}
+/>
                 <div className="card-body d-flex flex-column">
                   <h5 className="card-title">{product.name}</h5>
                   <p className="card-text fw-bold">{product.price}</p>
@@ -127,7 +127,7 @@ export default function Home() {
             <div key={product.id} className="col-md-3 mb-4">
               <div className="card shadow-sm h-90">
                 <img
-                  src={product.image}
+                   src={getImageUrl(product.image)}
                   alt={product.name}
                   className="card-img-top"
                   style={{ height: '250px', objectFit: 'cover' }}
@@ -149,7 +149,7 @@ export default function Home() {
             <div key={product.id} className="col-md-6 mb-4">
               <div className="card shadow-sm h-100 d-flex flex-row">
                 <img
-                  src={product.image}
+                   src={getImageUrl(product.image)}
                   alt={product.name}
                   style={{ width: '180px', objectFit: 'cover' }}
                   className="rounded-start"

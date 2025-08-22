@@ -17,52 +17,139 @@ namespace Corta.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var products = await _productService.GetAllAsync();
-            return Ok(products);
-        }
-
-        [HttpGet("{id}")]
-       public async Task<IActionResult> GetById(int id)
+       public async Task<IActionResult> GetAll()
 {
-    var product = await _productService.GetByIdAsync(id);
-    if (product == null)
-        return NotFound();
+    var products = await _productService.GetAllAsync();
 
-    var response = new
+    var response = products.Select(p => new
     {
-        product.Id,
-        product.Name,
-        product.Description,
-        product.Price,
-        product.Stock,
-        product.ImageUrl,
-        product.Size,
-        ProductImages = product.ProductImages.Select(pi => new
+        p.Id,
+        p.Name,
+        p.Description,
+        p.Price,
+        p.Stock,
+        p.ImageUrl,
+        p.Size,
+        ProductImages = p.ProductImages.Select(pi => new
         {
             pi.Id,
             pi.ProductId,
             pi.ImageUrl
         }).ToList()
-    };
+    });
 
     return Ok(response);
 }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] ProductDto dto)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
+            var product = await _productService.GetByIdAsync(id);
+            if (product == null)
+                return NotFound();
+
+            var response = new
+            {
+                product.Id,
+                product.Name,
+                product.Description,
+                product.Price,
+                product.Stock,
+                product.ImageUrl,
+                product.Size,
+                ProductImages = product.ProductImages.Select(pi => new
+                {
+                    pi.Id,
+                    pi.ProductId,
+                    pi.ImageUrl
+                }).ToList()
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] ProductDto dto, IFormFile? image, [FromForm] List<IFormFile>? additionalImages)
+        {
+            if (image != null && image.Length > 0)
+            {
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                Directory.CreateDirectory(uploadsPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                dto.ImageUrl = $"/images/{fileName}";
+            }
+
+            if (additionalImages != null && additionalImages.Any())
+            {
+                var productImages = new List<ProductImageDto>();
+                foreach (var img in additionalImages)
+                {
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    Directory.CreateDirectory(uploadsPath);
+
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await img.CopyToAsync(stream);
+
+                    productImages.Add(new ProductImageDto { ImageUrl = $"/images/{fileName}" });
+                }
+
+                dto.ProductImages = productImages;
+            }
+
             var product = await _productService.CreateAsync(dto);
             return Ok(product);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] ProductDto dto)
+        public async Task<IActionResult> Update(int id, [FromForm] ProductDto dto, IFormFile? image, [FromForm] List<IFormFile>? additionalImages)
         {
-            var success = await _productService.UpdateAsync(id, dto);
-            if (!success) return NotFound();
-            return Ok("Product updated");
+            if (image != null && image.Length > 0)
+            {
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                Directory.CreateDirectory(uploadsPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                dto.ImageUrl = $"/images/{fileName}";
+            }
+
+            if (additionalImages != null && additionalImages.Any())
+            {
+                var productImages = new List<ProductImageDto>();
+                foreach (var img in additionalImages)
+                {
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    Directory.CreateDirectory(uploadsPath);
+
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await img.CopyToAsync(stream);
+
+                    productImages.Add(new ProductImageDto { ImageUrl = $"/images/{fileName}" });
+                }
+
+                dto.ProductImages = productImages;
+            }
+
+            var updatedProduct = await _productService.UpdateAsync(id, dto);
+            if (updatedProduct == null) return NotFound();
+
+            return Ok(updatedProduct);
         }
 
         [HttpDelete("{id}")]
@@ -70,7 +157,8 @@ namespace Corta.Controllers
         {
             var success = await _productService.DeleteAsync(id);
             if (!success) return NotFound();
-            return Ok("Product deleted");
+
+            return Ok(new { message = "Product deleted", productId = id });
         }
     }
 }
