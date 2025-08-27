@@ -5,24 +5,44 @@ const ProductForm = () => {
     name: "",
     description: "",
     price: "",
-    imageUrl: "",
+    image: null, 
+    additionalImages: [], 
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, files } = e.target;
+    if (files) {
+      if (name === "additionalImages") {
+        setFormData({ ...formData, additionalImages: Array.from(files) });
+      } else {
+        setFormData({ ...formData, [name]: files[0] });
+      }
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const data = new FormData();
+      data.append("name", formData.name);
+      data.append("description", formData.description);
+      data.append("price", formData.price);
+      if (formData.image) data.append("image", formData.image);
+
+      formData.additionalImages.forEach((file) => {
+        data.append("additionalImages", file);
+      });
+
       const response = await fetch("http://localhost:5197/api/products", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
         },
-        body: JSON.stringify(formData),
+        body: data,
       });
 
       if (response.ok) {
@@ -32,10 +52,12 @@ const ProductForm = () => {
           name: "",
           description: "",
           price: "",
-          imageUrl: "",
+          image: null,
+          additionalImages: [],
         });
       } else {
-        setError("Failed to add product.");
+        const err = await response.text();
+        setError("Failed to add product: " + err);
         setSuccess("");
       }
     } catch (error) {
@@ -84,14 +106,24 @@ const ProductForm = () => {
           />
         </div>
         <div className="mb-3">
-          <label>Image URL</label>
+          <label>Main Image</label>
           <input
-            type="text"
-            name="imageUrl"
+            type="file"
+            name="image"
             className="form-control"
-            value={formData.imageUrl}
             onChange={handleChange}
-            required
+            accept="image/*"
+          />
+        </div>
+        <div className="mb-3">
+          <label>Additional Images</label>
+          <input
+            type="file"
+            name="additionalImages"
+            className="form-control"
+            multiple
+            onChange={handleChange}
+            accept="image/*"
           />
         </div>
         <button type="submit" className="btn btn-success">
@@ -102,4 +134,4 @@ const ProductForm = () => {
   );
 };
 
-export default ProductForm;
+export default ProductForm;

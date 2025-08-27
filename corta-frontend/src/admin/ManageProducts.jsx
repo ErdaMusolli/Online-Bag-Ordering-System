@@ -7,322 +7,264 @@ const ManageProducts = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', description: '', stock: '', imageUrl: '' });
+  const [editForm, setEditForm] = useState({ name: '', price: '', description: '', stock: '', image: null, additionalImages: [], existingImages: [] });
+  const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', stock: '', image: null, additionalImages: [] });
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', description: '', stock: '', imageUrl: '' });
 
- useEffect(() => {
-  const checkAndFetchProducts = async () => {
-    let token = localStorage.getItem('token');
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const token = localStorage.getItem('token') || await getNewAccessToken();
+      if (!token) return navigate('/login');
 
-    if (!token) {
-      token = await getNewAccessToken();
-      if (!token) {
-        navigate('/login');
-        return;
+      try {
+        const res = await authFetch('http://localhost:5197/api/products');
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const data = await res.json();
+
+        const productsArray = (Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []))
+          .map(p => {
+            const mainImage = p.imageUrl ? (p.imageUrl.startsWith('/') ? p.imageUrl : `/images/${p.imageUrl}`) : null;
+            const productImagesRaw = Array.isArray(p.ProductImages?.$values) ? p.ProductImages.$values : (p.ProductImages || []);
+            const productImages = productImagesRaw.map(img => {
+              const imgUrl = img.imageUrl || img.url || img.path || '';
+              return { ...img, imageUrl: imgUrl.startsWith('/') ? imgUrl : `/images/${imgUrl}` };
+            });
+            return { ...p, imageUrl: mainImage, productImages };
+          });
+
+        setProducts(productsArray);
+      } catch (error) {
+        console.error('Error fetching products:', error);
       }
-    }
+    };
+    fetchProducts();
+  }, [navigate]);
 
-    try {
-      const res = await authFetch('http://localhost:5197/api/products');
-      if (!res.ok) throw new Error('Failed to fetch products');
-
-      const data = await res.json();
-      const productsArray = Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []);
-      setProducts(productsArray);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  };
-
-  checkAndFetchProducts();
-}, [navigate]);
-
-
+  // Delete product
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) return;
+    if (!window.confirm('Delete this product?')) return;
+    const token = localStorage.getItem('token') || await getNewAccessToken();
+    if (!token) return navigate('/login');
 
     try {
-       let token = localStorage.getItem('token');
-       if (!token) {
-       token = await getNewAccessToken();
-       if (!token) {
-       navigate('/login');
-      return;
-    }
-  }
       const res = await fetch(`http://localhost:5197/api/products/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        setProducts(products.filter((p) => p.id !== id));
-      } else {
-        alert('Delete failed');
-      }
+      if (res.ok) setProducts(products.filter(p => p.id !== id));
+      else alert('Delete failed');
     } catch (err) {
-      console.error('Delete error', err);
+      console.error(err);
     }
   };
 
+  // Open edit modal
   const openEditModal = (product) => {
     setEditingProduct(product);
-    setEditForm({ ...product });
+    setEditForm({
+      ...product,
+      image: null,
+      additionalImages: [],
+      existingImages: product.productImages || []
+    });
   };
 
+  // Handle Update
   const handleUpdate = async () => {
-    try {
-      let token = localStorage.getItem('token');
-      if (!token) {
-      token = await getNewAccessToken();
-      if (!token) {
-      navigate('/login');
-      return;
-  }
-}
-      const res = await fetch(`http://localhost:5197/api/products/${editingProduct.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(editForm),
-      });
+    const token = localStorage.getItem('token') || await getNewAccessToken();
+    if (!token) return navigate('/login');
 
-      if (res.ok) {
-        setProducts(products.map((p) => (p.id === editingProduct.id ? { ...p, ...editForm } : p)));
-        setEditingProduct(null);
-      } else {
-        alert('Update failed');
-      }
-    } catch (err) {
-      console.error('Update error', err);
-    }
+    const formData = new FormData();
+    formData.append('name', editForm.name);
+    formData.append('price', editForm.price);
+    formData.append('description', editForm.description);
+    formData.append('stock', editForm.stock);
+    if (editForm.image) formData.append('image', editForm.image);
+    editForm.additionalImages.forEach(file => formData.append('additionalImages', file));
+    editForm.existingImages.forEach(img => formData.append('existingImageUrls', img.imageUrl));
+
+    const res = await fetch(`http://localhost:5197/api/products/${editingProduct.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+
+    if (res.ok) {
+      const updatedProduct = await res.json();
+      setProducts(products.map(p => p.id === editingProduct.id ? {
+        ...updatedProduct,
+        productImages: (updatedProduct.ProductImages || []).map(img => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith('/') ? img.imageUrl : `/${img.imageUrl}`
+        }))
+      } : p));
+      setEditingProduct(null);
+    } else alert('Update failed');
   };
 
+  // Handle Add
   const handleAdd = async () => {
-    try {
-      let token = localStorage.getItem('token');
-      if (!token) {
-      token = await getNewAccessToken();
-      if (!token) {
-      navigate('/login');
-      return;
-  }
-}
-      const res = await fetch('http://localhost:5197/api/products', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          ...newProduct,
-          price: parseFloat(newProduct.price),
-          stock: parseInt(newProduct.stock, 10)
-        }),
-      });
+    const token = localStorage.getItem('token') || await getNewAccessToken();
+    if (!token) return navigate('/login');
 
-      if (res.ok) {
-        const addedProduct = await res.json();
-        setProducts([...products, addedProduct]);
-        setShowAddModal(false);
-      } else {
-        alert('Adding product failed');
-      }
-    } catch (err) {
-      console.error('Add product error', err);
-    }
+    const formData = new FormData();
+    formData.append('name', newProduct.name);
+    formData.append('price', newProduct.price);
+    formData.append('description', newProduct.description);
+    formData.append('stock', newProduct.stock);
+    if (newProduct.image) formData.append('image', newProduct.image);
+    newProduct.additionalImages.forEach(file => formData.append('productImages', file));
+
+    const res = await fetch('http://localhost:5197/api/products', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    });
+
+    if (res.ok) {
+      const addedProduct = await res.json();
+      setProducts([...products, {
+        ...addedProduct,
+        productImages: (addedProduct.ProductImages || []).map(img => ({
+          ...img,
+          imageUrl: img.imageUrl.startsWith('/') ? img.imageUrl : `/${img.imageUrl}`
+        }))
+      }]);
+      setShowAddModal(false);
+    } else alert('Adding product failed');
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div
-      style={{
-        minHeight: '100vh',
-        padding: '20px',
-        paddingTop: '80px',
-        boxSizing: 'border-box',
-        backgroundColor: '#f8f9fa',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100vw',
-      }}
-    >
-      <button
-        className="btn btn-outline-secondary mb-3 align-self-start"
-        onClick={() => navigate('/admin')}
-      >
-        ← Back
-      </button>
-      <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
-        👜 Manage Products
-      </h2>
-      <button
-        className="btn btn-outline-primary mb-3"
-        onClick={() => {
-          setNewProduct({ name: '', price: '', description: '', stock: '', imageUrl: '' });
-          setShowAddModal(true);
-        }}
-      >
-        ➕ Add New Product
-      </button>
-
-      <div className="w-100" style={{ maxWidth: '1000px' }}>
-        <div className="row mb-3 g-2">
-          <div className="col-12">
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search products by name..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+return (
+    <div className="container-fluid" style={{ padding: '80px', paddingTop: '150px' }}>
+      <div className="d-flex align-items-center mb-3">
+        <div className="flex-shrink-0">
+          <button className="btn btn-outline-secondary" onClick={() => navigate('/admin')}>
+            ← Back
+          </button>
         </div>
-
-        <div className="table-responsive">
-          <table className="table table-bordered table-hover bg-white rounded shadow-sm">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Image</th>
-                <th style={{ minWidth: '120px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product, index) => (
-                  <tr key={product.id}>
-                    <td>{index + 1}</td>
-                    <td>{product.name}</td>
-                    <td>{product.description}</td>
-                    <td>${product.price.toFixed(2)}</td>
-                    <td>{product.stock}</td>
-                    <td>
-                      <img
-                        src={product.imageUrl}
-                        alt={product.name}
-                        style={{ width: '50px', height: 'auto', objectFit: 'cover' }}
-                      />
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-outline-primary btn-sm me-2"
-                        onClick={() => openEditModal(product)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDelete(product.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center">
-                    No products found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="flex-grow-1 text-center">
+          <h2 className="m-0">Manage Products</h2>
+        </div>
+        <div className="flex-shrink-0">
+          <button
+            className="btn btn-outline-primary"
+            onClick={() => {
+              setNewProduct({ name:'', price:'', description:'', stock:'', image:null, additionalImages:[] });
+              setShowAddModal(true);
+            }}
+          >
+            ➕ Add Product
+          </button>
         </div>
       </div>
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        className="form-control mb-3"
+      />
+
+      <table className="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Main Image</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredProducts.length ? filteredProducts.map((p,i) => (
+            <tr key={p.id}>
+              <td>{i+1}</td>
+              <td>{p.name}</td>
+              <td>{p.description}</td>
+              <td>${p.price.toFixed(2)}</td>
+              <td>{p.stock}</td>
+              <td>{p.imageUrl ? <img src={`http://localhost:5197${p.imageUrl}`} alt={p.name} width="50" /> : <span>No image</span>}</td>
+              <td>
+                <button className="btn btn-sm btn-outline-primary me-2" onClick={() => openEditModal(p)}>Edit</button>
+                <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p.id)}>Delete</button>
+              </td>
+            </tr>
+          )) : <tr><td colSpan="7" className="text-center">No products found</td></tr>}
+        </tbody>
+      </table>
+
       {editingProduct && (
-        <div className="modal d-block" tabIndex="-1" role="dialog">
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content shadow">
+        <div className="modal d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Edit Product</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setEditingProduct(null)}
-                ></button>
+                <h5>Edit Product</h5>
+                <button className="btn-close" onClick={() => setEditingProduct(null)}></button>
               </div>
               <div className="modal-body">
-                {['name', 'price', 'description', 'stock', 'imageUrl'].map((field) => (
-                  <div className="mb-3" key={field}>
-                    <label className="form-label text-capitalize">{field}</label>
-                    <input
-                      type={field === 'price' || field === 'stock' ? 'number' : 'text'}
-                      className="form-control"
-                      value={editForm[field]}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, [field]: e.target.value })
-                      }
-                    />
+                {['name','price','description','stock'].map(f => (
+                  <div key={f} className="mb-3">
+                    <label>{f}</label>
+                    <input type={f==='price'||f==='stock'?'number':'text'} className="form-control"
+                      value={editForm[f]} onChange={e => setEditForm({...editForm,[f]:e.target.value})} />
                   </div>
                 ))}
+                <div className="mb-3">
+                  <label>Main Image</label>
+                  <input type="file" className="form-control" onChange={e => setEditForm({...editForm,image:e.target.files[0]})} />
+                </div>
+                <div className="mb-3">
+                  <label>Additional Images</label>
+                  <div className="d-flex mb-2">
+                    {editForm.existingImages.map((img, idx) => (
+                      <img key={idx} src={`http://localhost:5197${img.imageUrl}`} alt={`existing-${idx}`} width="50" className="me-2"/>
+                    ))}
+                  </div>
+                  <input type="file" className="form-control" multiple
+                    onChange={e => setEditForm({...editForm, additionalImages: Array.from(e.target.files)})} />
+                </div>
               </div>
               <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setEditingProduct(null)}
-                >
-                  Cancel
-                </button>
-                <button className="btn btn-primary" onClick={handleUpdate}>
-                  Save Changes
-                </button>
+                <button className="btn btn-secondary" onClick={() => setEditingProduct(null)}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleUpdate}>Save</button>
               </div>
             </div>
           </div>
         </div>
       )}
+
       {showAddModal && (
-        <div className="modal d-block" tabIndex="-1" role="dialog">
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content shadow">
+        <div className="modal d-block" tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Add New Product</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowAddModal(false)}
-                ></button>
+                <h5>Add Product</h5>
+                <button className="btn-close" onClick={() => setShowAddModal(false)}></button>
               </div>
               <div className="modal-body">
-                {['name', 'price', 'description', 'stock', 'imageUrl'].map((field) => (
-                  <div className="mb-3" key={field}>
-                    <label className="form-label text-capitalize">{field}</label>
-                    <input
-                      type={field === 'price' || field === 'stock' ? 'number' : 'text'}
-                      className="form-control"
-                      value={newProduct[field]}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, [field]: e.target.value })
-                      }
-                    />
+                {['name','price','description','stock'].map(f => (
+                  <div key={f} className="mb-3">
+                    <label>{f}</label>
+                    <input type={f==='price'||f==='stock'?'number':'text'} className="form-control"
+                      value={newProduct[f]} onChange={e => setNewProduct({...newProduct,[f]:e.target.value})} />
                   </div>
                 ))}
+                <div className="mb-3">
+                  <label>Main Image</label>
+                  <input type="file" className="form-control" onChange={e => setNewProduct({...newProduct,image:e.target.files[0]})} />
+                </div>
+                <div className="mb-3">
+                  <label>Additional Images</label>
+                  <input type="file" className="form-control" multiple onChange={e => setNewProduct({...newProduct,additionalImages:Array.from(e.target.files)})} />
+                </div>
               </div>
               <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Cancel
-                </button>
-                <button className="btn btn-primary" onClick={handleAdd}>
-                  Add Product
-                </button>
+                <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button className="btn btn-primary" onClick={handleAdd}>Add</button>
               </div>
             </div>
           </div>

@@ -2,7 +2,7 @@ namespace Corta.DTOs
 {
     public class ProductDto
     {
-        public int Id { get; set; }  
+        public int Id { get; set; }
         public string Name { get; set; } = null!;
         public string Description { get; set; } = null!;
         public decimal Price { get; set; }
@@ -12,6 +12,8 @@ namespace Corta.DTOs
         public bool IsNewArrival { get; set; }
         public bool IsBestseller { get; set; }
         public bool IsSpecialOffer { get; set; }
-          public List<ProductImageDto> ProductImages { get; set; } = new();
+        public List<ProductImageDto> ProductImages { get; set; } = new();
+        public List<IFormFile>? AdditionalImages { get; set; }
+
     }
 }

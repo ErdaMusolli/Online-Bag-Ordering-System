@@ -2,7 +2,11 @@ import { useNavigate } from "react-router-dom";
 
 function ProductItem({ product }) {
   const navigate = useNavigate();
-  const imagePath = `/${product.imageUrl}`;
+  const imagePath =
+    product.imageUrl && product.imageUrl.startsWith("http")
+      ? product.imageUrl
+      : `http://localhost:5197${product.imageUrl}`;
+
 
   return (
     <div
