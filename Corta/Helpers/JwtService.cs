@@ -24,6 +24,7 @@ namespace Corta.Helpers
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email),
+                new Claim("UserId", user.Id.ToString()),
                 new Claim(ClaimTypes.Role, user.Role)
             };
 

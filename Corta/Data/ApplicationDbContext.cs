@@ -74,6 +74,12 @@ namespace Corta.Data
              .HasForeignKey(r => r.UserId)
              .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<PurchaseItem>()
+        .HasOne(pi => pi.Product)
+        .WithMany(p => p.PurchaseItems)
+        .HasForeignKey(pi => pi.ProductId)
+        .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

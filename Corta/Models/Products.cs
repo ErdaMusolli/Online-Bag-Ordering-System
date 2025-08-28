@@ -14,5 +14,7 @@ namespace Corta.Models
         public bool IsSpecialOffer { get; set; } = false;
     public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
 
+    public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
+
 }
 }

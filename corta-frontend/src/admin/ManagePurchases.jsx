@@ -5,14 +5,13 @@ import { getNewAccessToken } from '../services/tokenUtils';
 
 const ManagePurchases = () => {
   const navigate = useNavigate(); 
-
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const getStatusBadge = (status) => {
     const statusColors = {
-      'In Process': 'bg-info text-white',
+      'Pending': 'bg-secondary text-white',
       'Ready': 'bg-warning text-dark',
       'Completed': 'bg-success text-white',
       'Cancelled': 'bg-danger text-white',
@@ -25,19 +24,16 @@ const ManagePurchases = () => {
   };
 
   useEffect(() => {
-    const checkAndFetchPurchases = async () => {
+    const fetchPurchases = async () => {
       let token = localStorage.getItem('token');
-
+      if (!token) token = await getNewAccessToken();
       if (!token) {
-        token = await getNewAccessToken();
-        if (!token) {
-          navigate('/login');
-          return;
-        }
+        navigate('/login');
+        return;
       }
+
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
         const res = await authFetch('http://localhost:5197/api/purchase', {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -47,13 +43,19 @@ const ManagePurchases = () => {
         const normalizedPurchases = Array.isArray(data.$values) ? data.$values : data;
 
         normalizedPurchases.forEach(p => {
-          if (!Array.isArray(p.purchaseItems) && p.purchaseItems?.$values) {
-            p.purchaseItems = p.purchaseItems.$values;
-          }
-          if (!Array.isArray(p.purchaseItems)) {
-            p.purchaseItems = [];
-          }
-          if (!p.status) p.status = 'In Process';
+          p.purchaseItems = Array.isArray(p.purchaseItems)
+            ? p.purchaseItems
+            : p.purchaseItems?.$values || [];
+
+          p.purchaseItems.forEach(item => {
+            if (!item.productImageUrl) {
+              item.productImageUrl = '/default-product.jpg';
+            } else if (!item.productImageUrl.startsWith('http')) {
+              item.productImageUrl = `http://localhost:5197${item.productImageUrl}`;
+            }
+          });
+
+          if (!p.status) p.status = 'Pending';
         });
 
         setPurchases(normalizedPurchases);
@@ -63,70 +65,45 @@ const ManagePurchases = () => {
         setLoading(false);
       }
     };
-    checkAndFetchPurchases();
+    fetchPurchases();
   }, [navigate]);
 
   const handleStatusChange = async (purchaseId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const purchaseToUpdate = purchases.find(p => p.id === purchaseId);
-      if (!purchaseToUpdate) return;
+      if (!token) return;
 
-      const updatedPurchase = {
-        ...purchaseToUpdate,
-        status: newStatus,
-        purchaseItems: purchaseToUpdate.purchaseItems,
-      };
-
-      const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}`, {
+      const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updatedPurchase),
+        body: JSON.stringify(newStatus),
       });
 
       if (res.ok) {
-        setPurchases(purchases.map(p =>
-          p.id === purchaseId ? { ...p, status: newStatus } : p
-        ));
+        setPurchases(prev =>
+          prev.map(p => (p.id === purchaseId ? { ...p, status: newStatus } : p))
+        );
       } else {
-        alert('Failed to update status');
+        const data = await res.json();
+        alert(data.error || 'Failed to update status');
       }
     } catch (err) {
       console.error('Error updating status:', err);
     }
   };
 
-  const filteredPurchases = purchases.filter(p =>
-    p.userId.toString().includes(searchTerm.trim())
-  );
+  const filteredPurchases = purchases
+    .filter(p => p.userId.toString().includes(searchTerm.trim()))
+    .filter(p => p.status !== 'Completed' && p.status !== 'Cancelled');
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        padding: '20px',
-        paddingTop: '80px',
-        boxSizing: 'border-box',
-        backgroundColor: '#f8f9fa',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100vw',
-      }}
-    >
-      <button
-        className="btn btn-outline-secondary mb-3 align-self-start"
-        onClick={() => navigate('/admin')}
-      >
-        ← Back
-      </button>
+    <div style={{ minHeight: '100vh', padding: '20px', paddingTop: '80px', backgroundColor: '#f8f9fa', display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100vw' }}>
+      <button className="btn btn-outline-secondary mb-3 align-self-start" onClick={() => navigate('/admin')}>← Back</button>
 
-      <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>
-        🛒 Manage Purchases
-      </h2>
+      <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>🛒 Manage Purchases</h2>
 
       <div className="w-100" style={{ maxWidth: '1200px' }}>
         <div className="row mb-3 g-2">
@@ -145,15 +122,16 @@ const ManagePurchases = () => {
           <div className="text-center">Loading...</div>
         ) : (
           <div className="table-responsive">
-            <table className="table table-bordered table-hover bg-white rounded shadow-sm">
+            <table className="table table-hover bg-white rounded shadow-sm">
               <thead className="table-light">
                 <tr>
-                  <th>#</th>
                   <th>User ID</th>
+                  <th>Created At</th>
+                  <th>Product Image</th>
                   <th>Product Name</th>
                   <th>Quantity</th>
-                  <th>Total Amount</th>
-                  <th>Created At</th>
+                  <th>Price</th>
+                  <th>Total</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -164,24 +142,34 @@ const ManagePurchases = () => {
                     purchase.purchaseItems.length > 0 ? (
                       purchase.purchaseItems.map((item, idx) => (
                         <tr key={`${purchase.id}-${idx}`}>
-                          <td>{idx + 1}</td>
-                          <td>{purchase.userId}</td>
-                          <td>{item.productName}</td>
-                          <td>{item.quantity}</td>
-                          <td>${purchase.totalAmount.toFixed(2)}</td>
-                          <td>{new Date(purchase.createdAt).toLocaleString()}</td>
                           {idx === 0 && (
                             <>
-                              <td rowSpan={purchase.purchaseItems.length}>
-                                {getStatusBadge(purchase.status)}
-                              </td>
+                              <td rowSpan={purchase.purchaseItems.length}>{purchase.userId}</td>
+                              <td rowSpan={purchase.purchaseItems.length}>{new Date(purchase.createdAt).toLocaleString()}</td>
+                            </>
+                          )}
+                          <td>
+                            <img
+                              src={item.productImageUrl}
+                              alt={item.productName}
+                              onError={(e) => { e.target.onerror = null; e.target.src = "/default-product.jpg"; }}
+                              style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '5px' }}
+                            />
+                          </td>
+                          <td>{item.productName}</td>
+                          <td>{item.quantity}</td>
+                          <td>${item.price.toFixed(2)}</td>
+                          {idx === 0 && (
+                            <>
+                              <td rowSpan={purchase.purchaseItems.length}>${purchase.totalAmount.toFixed(2)}</td>
+                              <td rowSpan={purchase.purchaseItems.length}>{getStatusBadge(purchase.status)}</td>
                               <td rowSpan={purchase.purchaseItems.length}>
                                 <select
                                   className="form-select"
                                   value={purchase.status}
                                   onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
                                 >
-                                  <option value="In Process">In Process</option>
+                                  <option value="Pending">Pending</option>
                                   <option value="Ready">Ready</option>
                                   <option value="Completed">Completed</option>
                                   <option value="Cancelled">Cancelled</option>
@@ -193,11 +181,17 @@ const ManagePurchases = () => {
                       ))
                     ) : (
                       <tr key={purchase.id}>
-                        <td>1</td>
                         <td>{purchase.userId}</td>
+                        <td>{new Date(purchase.createdAt).toLocaleString()}</td>
+                        <td>
+                          <img
+                            src="/default-product.jpg"
+                            alt="Product"
+                            style={{ width: '80px', height: '100px', objectFit: 'cover', borderRadius: '5px' }}
+                          />
+                        </td>
                         <td colSpan="2"><i>No items</i></td>
                         <td>${purchase.totalAmount.toFixed(2)}</td>
-                        <td>{new Date(purchase.createdAt).toLocaleString()}</td>
                         <td>{getStatusBadge(purchase.status)}</td>
                         <td>
                           <select
@@ -205,7 +199,7 @@ const ManagePurchases = () => {
                             value={purchase.status}
                             onChange={(e) => handleStatusChange(purchase.id, e.target.value)}
                           >
-                            <option value="In Process">In Process</option>
+                            <option value="Pending">Pending</option>
                             <option value="Ready">Ready</option>
                             <option value="Completed">Completed</option>
                             <option value="Cancelled">Cancelled</option>
@@ -216,9 +210,7 @@ const ManagePurchases = () => {
                   )
                 ) : (
                   <tr>
-                    <td colSpan="8" className="text-center">
-                      No purchases found
-                    </td>
+                    <td colSpan="9" className="text-center">No purchases found</td>
                   </tr>
                 )}
               </tbody>
@@ -231,6 +223,14 @@ const ManagePurchases = () => {
 };
 
 export default ManagePurchases;
+
+
+
+
+
+
+
+
 
 
 

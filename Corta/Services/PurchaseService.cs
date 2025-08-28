@@ -18,11 +18,18 @@ namespace Corta.Services
             _context = context;
         }
 
-        public async Task<List<PurchaseDto>> GetAllDtoAsync()
+        public async Task<List<PurchaseDto>> GetAllDtoAsync(int? userId = null)
         {
-            var purchases = await _context.Purchases
+            var query = _context.Purchases
                 .Include(p => p.PurchaseItems)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (userId.HasValue)
+            {
+                query = query.Where(p => p.UserId == userId.Value);
+            }
+
+            var purchases = await query.ToListAsync();
 
             var purchaseDtos = purchases.Select(p => new PurchaseDto
             {
@@ -38,11 +45,10 @@ namespace Corta.Services
                     Price = pi.Price,
                     ProductImageUrl = pi.ProductImageUrl
                 }).ToList()
-            }).ToList();
+            }).ToList() ?? new List<PurchaseDto>();
 
             return purchaseDtos;
         }
-
 
         public async Task<Purchase?> GetByIdAsync(int id)
         {
@@ -61,13 +67,16 @@ namespace Corta.Services
             foreach (var itemDto in purchaseDto.PurchaseItems)
             {
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
+                if (product == null)
+                    throw new ArgumentException($"Product with ID {itemDto.ProductId} does not exist.");
 
                 purchaseItems.Add(new PurchaseItem
                 {
+                    ProductId = product.Id,
                     ProductName = itemDto.ProductName,
                     Quantity = itemDto.Quantity,
                     Price = itemDto.Price,
-                    ProductImageUrl = product?.ImageUrl ?? ""
+                    ProductImageUrl = product.ImageUrl!
                 });
             }
 
@@ -76,7 +85,7 @@ namespace Corta.Services
                 UserId = purchaseDto.UserId,
                 CreatedAt = DateTime.UtcNow,
                 TotalAmount = purchaseDto.TotalAmount,
-                Status = purchaseDto.Status ?? "In Process",
+                Status = purchaseDto.Status ?? "Pending",
                 PurchaseItems = purchaseItems
             };
 
@@ -92,8 +101,7 @@ namespace Corta.Services
                 .Include(p => p.PurchaseItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (purchase == null)
-                return false;
+            if (purchase == null) return false;
 
             purchase.UserId = purchaseDto.UserId;
             purchase.TotalAmount = purchaseDto.TotalAmount;
@@ -106,14 +114,17 @@ namespace Corta.Services
             foreach (var itemDto in purchaseDto.PurchaseItems)
             {
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
+                if (product == null)
+                    throw new ArgumentException($"Product with ID {itemDto.ProductId} does not exist.");
 
                 updatedItems.Add(new PurchaseItem
                 {
                     PurchaseId = purchase.Id,
+                    ProductId = product.Id,
                     ProductName = itemDto.ProductName,
                     Quantity = itemDto.Quantity,
                     Price = itemDto.Price,
-                    ProductImageUrl = product?.ImageUrl ?? ""
+                    ProductImageUrl = product.ImageUrl!
                 });
             }
 
@@ -129,15 +140,15 @@ namespace Corta.Services
                 .Include(p => p.PurchaseItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            if (purchase == null)
-                return false;
+            if (purchase == null) return false;
 
             _context.PurchaseItems.RemoveRange(purchase.PurchaseItems);
             _context.Purchases.Remove(purchase);
 
             await _context.SaveChangesAsync();
-
             return true;
         }
     }
 }
+
+

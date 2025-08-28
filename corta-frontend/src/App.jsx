@@ -34,6 +34,10 @@ import RefundPolicy from './components/ContactForm/RefundPolicy';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import { CartProvider } from './context/CartContext';
+import ShippingInfo from "./pages/faq/ShippingInfo";
+import Returns from "./pages/faq/Returns";
+import PaymentMethods from "./pages/faq/PaymentMethods";
+
 
 function AppContent() {
   const location = useLocation();
@@ -110,6 +114,9 @@ function AppContent() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/refund" element={<RefundPolicy />} />
+          <Route path="/shipping-info" element={<ShippingInfo />} />
+        <Route path="/returns" element={<Returns />} />
+        <Route path="/payment-methods" element={<PaymentMethods />} />
       </Routes>
 
       {!hideLayout && <Footer />}
