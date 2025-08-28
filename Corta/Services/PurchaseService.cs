@@ -40,6 +40,7 @@ namespace Corta.Services
                 Status = p.Status,
                 PurchaseItems = p.PurchaseItems.Select(pi => new PurchaseItemDto
                 {
+                    ProductId = pi.ProductId, 
                     ProductName = pi.ProductName,
                     Quantity = pi.Quantity,
                     Price = pi.Price,

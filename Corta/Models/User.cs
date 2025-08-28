@@ -10,6 +10,8 @@ namespace Corta.Models{
 
         public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
+
 
     }
 }
