@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -34,28 +34,36 @@ import RefundPolicy from './components/ContactForm/RefundPolicy';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
 import { CartProvider } from './context/CartContext';
+import { WishlistProvider } from "./context/WishlistContext";
+import GuestWishlist from "./pages/GuestWishlist";
 import ShippingInfo from "./pages/faq/ShippingInfo";
 import Returns from "./pages/faq/Returns";
 import PaymentMethods from "./pages/faq/PaymentMethods";
+import { GuestWishlistProvider } from './context/GuestWishlistContext';
 
+
+const WishlistWrapper = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return <Navigate to="/guest-wishlist" replace />;
+  return <Wishlist />;
+};
 
 function AppContent() {
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
 
   const [products, setProducts] = useState([]);
- 
+  const [cartItems, setCartItems] = useState([]);
 
   useEffect(() => {
-  fetch("http://localhost:5197/api/products")
-    .then(res => res.json())
-    .then(setProducts)
-    .catch(console.error);
-}, []);
+    fetch("http://localhost:5197/api/products")
+      .then(res => res.json())
+      .then(setProducts)
+      .catch(console.error);
+  }, []);
 
   const addToCart = (product, quantity = 1, size = "S") => {
     const productToAdd = { ...product, quantity, productId: product.id, size };
-
     setCartItems(prev => {
       const existing = prev.find(i => i.productId === product.id && i.size === size);
       if (existing) {
@@ -73,8 +81,6 @@ function AppContent() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location]);
-
-  
 
   return (
     <>
@@ -100,10 +106,11 @@ function AppContent() {
           <Route path="personal-data" element={<PersonalData />} />
           <Route path="orders" element={<Orders />} />
           <Route path="order-details/:id" element={<OrderDetails />} />
-          <Route path="wishlist" element={<Wishlist />} />
+          <Route path="wishlist" element={<WishlistWrapper />} />
           <Route path="ratings" element={<Ratings />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
+        <Route path="/guest-wishlist" element={<GuestWishlist onAddToCart={addToCart} />}/>
         <Route path="/admin" element={<DashboardAdmin />} />
         <Route path="/manage-users" element={<ManageUsers />} />
         <Route path="/manage-products" element={<ManageProducts />} />
@@ -114,7 +121,7 @@ function AppContent() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/refund" element={<RefundPolicy />} />
-          <Route path="/shipping-info" element={<ShippingInfo />} />
+        <Route path="/shipping-info" element={<ShippingInfo />} />
         <Route path="/returns" element={<Returns />} />
         <Route path="/payment-methods" element={<PaymentMethods />} />
       </Routes>
@@ -127,9 +134,13 @@ function AppContent() {
 export default function App() {
   return (
     <CartProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <GuestWishlistProvider>
+        <WishlistProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </WishlistProvider>
+      </GuestWishlistProvider>
     </CartProvider>
   );
 }

@@ -3,8 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import LogoutButton from './LogoutButton';
 import UserMenu from '../shared/UserMenu';
+import { useWishlist } from '../../context/WishlistContext';
+import { useGuestWishlist } from '../../context/GuestWishlistContext';
+
+
+
 
 const Navbar = () => {
+  const { wishlist: userWishlist } = useWishlist();
+  const { wishlist: guestWishlist } = useGuestWishlist();
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
 
@@ -26,6 +33,11 @@ const Navbar = () => {
       bsCollapse.hide();
     }
   };
+   const isInWishlist = (productId) =>
+    isAuthenticated
+      ? userWishlist.some(p => p.id === productId)
+      : guestWishlist.some(p => p.id === productId);
+
 
   return (
     <nav
@@ -92,17 +104,30 @@ const Navbar = () => {
   </button>
 </form>
     <ul className="navbar-nav d-flex flex-row align-items-center gap-2 ms-auto">
-  <li className="nav-item">
-    <Link to="/favorites" className="nav-link" onClick={closeNavbar}>
-      <i className="bi bi-heart fs-5"></i>
-    </Link>
-  </li>
+ <li className="nav-item position-relative">
+  <Link
+    to={isAuthenticated ? "/profile/wishlist" : "/guest-wishlist"}
+    className="nav-link"
+    onClick={closeNavbar}
+  >
+    <i className="bi bi-heart fs-5"></i>
+    {(isAuthenticated ? userWishlist.length : guestWishlist.length) > 0 && (
+  <span
+    className="position-absolute badge rounded-pill bg-danger"
+    style={{ fontSize: "0.7rem",top: "2px",right:"-8px"}}
+  >
+    {isAuthenticated ? userWishlist.length : guestWishlist.length}
+  </span>
+)}
+  </Link>
+</li>
 
   <li className="nav-item">
     <Link to="/cart" className="nav-link" onClick={closeNavbar}>
       <i className="bi bi-cart fs-5"></i>
     </Link>
   </li>
+
   <Link to="/news" className="nav-link fw-bold">
   <i className="bi bi-globe me-1"></i> 
 </Link>

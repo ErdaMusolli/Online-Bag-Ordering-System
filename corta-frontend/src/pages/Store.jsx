@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import ProductList from "../components/products/ProductList";
+import { useWishlist } from "../context/WishlistContext";
 
 function Store({ cart, setCart }) {
   const [products, setProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("");
   const [token, setToken] = useState(null);
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
 
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
@@ -84,9 +87,9 @@ function Store({ cart, setCart }) {
     return 0;
   });
 
-  return (
-    <div className="container-fluid mt-4" style={{ paddingTop: "120px" }}>
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4">
+    return (
+    <div className="store-container">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 w-100">
         <h1
           className="text-center flex-grow-1 mb-3 mb-md-0"
           style={{ fontFamily: "'Libre Baskerville', serif" }}
@@ -110,7 +113,16 @@ function Store({ cart, setCart }) {
         </select>
       </div>
 
-      <ProductList products={sortedProducts} onAddToCart={handleAddToCart} />
+        <ProductList
+        products={sortedProducts}
+        onAddToCart={handleAddToCart}
+        onToggleWishlist={(product) =>
+          isInWishlist(product.id)
+            ? removeFromWishlist(product.id)
+            : addToWishlist(product)
+        }
+        isFavorite={(product) => isInWishlist(product.id)}
+      />
     </div>
   );
 }

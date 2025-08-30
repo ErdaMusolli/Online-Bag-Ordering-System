@@ -7,7 +7,7 @@ const getImageUrl = (url) => {
   return `http://localhost:5197/images/${url}`;
 };
 
-function CartItem({ item, onRemove, onQuantityChange }) {
+function CartItem({ item, onRemove, onQuantityChange, fromWishlist = false, toggleWishlist }) {
   const handleDecrease = () => {
     if (item.quantity > 1) {
       onQuantityChange(item.productId, item.size, item.quantity - 1);
@@ -18,58 +18,51 @@ function CartItem({ item, onRemove, onQuantityChange }) {
     onQuantityChange(item.productId, item.size, item.quantity + 1);
   };
 
-  return (
-    <div className="card mb-3">
-      <div className="row g-0 align-items-center">
-        <div className="col-md-2">
-          <img
-            src={getImageUrl(item.imageUrl)}
-            className="img-fluid rounded-start"
-            alt={item.name}
-          />
-        </div>
-        <div className="col-md-7">
-          <div className="card-body">
-            <h5 className="card-title">{item.name}</h5>
+    return (
+    <div className="cart-item-card" style={{ position: "relative" }}>
+  <img
+    src={getImageUrl(item.imageUrl)}
+    alt={item.name}
+    className="cart-item-image"
+  />
 
-            {item.size && (
-              <p className="card-text text-muted mb-1" style={{ fontSize: "14px" }}>
-                Size: {item.size}
-              </p>
-            )}
-
-            <p className="card-text fw-bold">
-              Price: {item.price.toFixed(2)} €
-            </p>
-
-            <div className="d-flex align-items-center gap-2">
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                onClick={handleDecrease}
-                disabled={item.quantity <= 1}
-              >
-                -
-              </button>
-              <span>Quantity: {item.quantity}</span>
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                onClick={handleIncrease}
-              >
-                +
-              </button>
-            </div>
-          </div>
+  <div className="cart-item-details">
+    <div className="d-flex justify-content-between align-items-center">
+      <h5>{item.name}</h5>
+      {item.fromWishlist && (
+            <span style={{ fontSize: "1.5rem", color: "red" }}>❤️</span>
+          )}
         </div>
-        <div className="col-md-3 text-end pe-3">
-          <button
-            className="btn btn-danger"
-            onClick={() => onRemove(item.productId, item.size)}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
+
+    {item.size && <p style={{ fontSize: "14px", color: "#555" }}>Size: {item.size}</p>}
+    <p style={{ fontWeight: "bold" }}>Price: {item.price.toFixed(2)} €</p>
+
+    <div className="d-flex align-items-center gap-2 mt-2">
+      <button
+        className="btn btn-sm btn-outline-secondary"
+        onClick={handleDecrease}
+        disabled={item.quantity <= 1}
+      >
+        -
+      </button>
+      <span>Quantity: {item.quantity}</span>
+      <button
+        className="btn btn-sm btn-outline-secondary"
+        onClick={handleIncrease}
+      >
+        +
+      </button>
     </div>
+  </div>
+
+  <button
+    className="btn btn-danger cart-item-delete"
+    onClick={() => onRemove(item.productId, item.size)}
+  >
+    Delete
+  </button>
+</div>
+
   );
 }
 

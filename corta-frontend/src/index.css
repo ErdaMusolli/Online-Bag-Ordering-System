@@ -2,10 +2,9 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: #242424;
+  background-color: #f8f9fa;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,64 +12,155 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100%;
+  overflow-x: hidden;
+  display: block; 
+  background-color: #f8f9fa;
+}
 a {
   font-weight: 500;
   color: #646cff;
-  text-decoration: inherit;
+  text-decoration: none;
 }
+
 a:hover {
   color: #535bf2;
 }
 
-body {
+h1, h2, h3, h4, h5, h6 {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
 }
 
 button {
   border-radius: 8px;
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
-  font-size: 1em;
+  font-size: 1rem;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+.store-container {
+  min-height: calc(100vh - 160px);
+  padding: 100px 40px 60px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 1.5rem;
 }
-html, body, #root {
-  height: 100%;
-  margin: 0;
+
+.store-container .card {
+  flex: 1 1 calc(25% - 0.5rem);
+  max-width: calc(25% - 0.5rem);
+  min-width: 350px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.store-container .card:hover {
+  transform: scale(1.03);
+}
+
+.store-container .card img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.wishlist-container {
+  min-height: calc(100vh - 160px); 
+  padding: 100px 40px 60px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 1.5rem;
   background-color: #f8f9fa;
 }
-body, html {
-  overflow-x: hidden;
+
+.wishlist-container .card {
+  flex: 1 1 calc(25% - 1.5rem);
+  max-width: calc(25% - 1.5rem);
+  min-width: 280px; 
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.wishlist-container .card:hover {
+  transform: scale(1.03);
+}
+
+.wishlist-container .card img {
+  width: 100%;   
+  height: 350px; 
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.wishlist-container .card-body {
+  padding: 0.5rem 1rem 1rem 1rem;
+  text-align: center;
+}
+
+.cart-item-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between; 
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: #fff;
+}
+
+.cart-item-card .cart-item-image {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.cart-item-card .cart-item-details {
+  flex-grow: 1;
+  padding: 0 15px;
+}
+
+.cart-item-card .cart-item-delete {
+  min-width: 100px;
+  height: 40px;
+  align-self: center;
+}
+
+footer {
+  width: 100%;
+  margin-top: auto;
+  background-color: #242424;
+  color: white;
+  padding: 20px;
+  text-align: center;
 }

@@ -1,18 +1,11 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
+import { useGuestWishlist } from "../context/GuestWishlistContext";
 
-const getImageUrl = (url) => {
-  if (!url) return "/placeholder.jpg"; 
-
-  if (url.startsWith("http")) return url; 
-
-  if (url.startsWith("/images/")) {
-    return `http://localhost:5197${url}`;
-  }
-
-  return `http://localhost:5197/images/${url}`;
-};
+const getImageUrl = (url) =>
+  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
 
 function ProductDetail() {
   const { id } = useParams();
@@ -22,13 +15,14 @@ function ProductDetail() {
   const [size, setSize] = useState("S");
   const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
+  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { wishlist: guestWishlist, addToWishlist: addGuestWishlist, removeFromWishlist: removeGuestWishlist, isInWishlist: isInGuestWishlist } = useGuestWishlist();
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     fetch(`http://localhost:5197/api/products/${id}`)
       .then((res) => res.json())
-      .then((data) => {
-        setProduct(data);
-      })
+      .then(setProduct)
       .catch(console.error);
   }, [id]);
 
@@ -39,22 +33,25 @@ function ProductDetail() {
     : Array.isArray(product.productImages?.$values)
     ? product.productImages.$values
     : [];
+  const images = [product.imageUrl, ...productImagesArray.map(pi => pi.imageUrl)].filter(Boolean);
 
-  const images = [product.imageUrl, ...productImagesArray.map((pi) => pi.imageUrl)].filter(Boolean);
-
-  const handlePrev = () => setMainIndex((mainIndex - 1 + images.length) % images.length);
-  const handleNext = () => setMainIndex((mainIndex + 1) % images.length);
+  const isInUserWishlist = token ? isInWishlist(product.id) : isInGuestWishlist(product.id);
 
   const handleAddToCart = () => {
-    try {
-      addToCart(product, quantity, size);
-      navigate("/cart");
-    } catch (err) {
-      console.error(err);
-      alert("Failed to add product to cart");
+    addToCart(product, quantity, size, isInUserWishlist);
+    navigate("/cart");
+  };
+
+  const handleFavorite = () => {
+    if (token) {
+      isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product);
+    } else {
+      isInGuestWishlist(product.id) ? removeGuestWishlist(product.id) : addGuestWishlist(product);
     }
   };
 
+  const handlePrev = () => setMainIndex((mainIndex - 1 + images.length) % images.length);
+  const handleNext = () => setMainIndex((mainIndex + 1) % images.length);
   return (
     <div className="container-fluid" style={{ paddingTop: "120px" }}>
       <div className="row justify-content-center">
@@ -131,15 +128,30 @@ function ProductDetail() {
             />
           </div>
 
-          <button
-            className="btn btn-lg mb-2"
-            onClick={handleAddToCart}
-            style={{ backgroundColor: "#536487ff", color: "white", border: "#536487ff" }}
-          >
-            Add to Cart
-          </button>
+          <div className=" gap-5 mt-5">
+            <button
+              className="btn btn-lg flex-grow-1"
+              onClick={handleAddToCart}
+              style={{ backgroundColor: "#536487ff", color: "white", border: "#536487ff" }}
+            >
+              Add to Cart
+            </button>
+           <button
+  className="btn btn-lg"
+  onClick={handleFavorite}
+  style={{
+    backgroundColor: "transparent",
+    border: "none",
+    fontSize: "1.5rem",
+    padding: "0 12px",
+    cursor: "pointer",
+  }}
+>
+  {isInUserWishlist ? "❤️" : "🤍"}
+</button>
+          </div>
 
-          <div>
+          <div className="mt-3">
             <h5 className="fw-bold">Description</h5>
             <p>{product.description}</p>
           </div>

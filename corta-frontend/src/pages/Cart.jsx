@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import CartItem from "../components/cart/CartItem";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { CartContext } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
+import { useGuestWishlist } from "../context/GuestWishlistContext";
 
 const getImageUrl = (url) => {
   if (!url) return "/placeholder.jpg"; 
@@ -19,7 +21,7 @@ function getUserIdFromToken() {
 }
 
 function Cart() {
-  const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart, setCartItems } = useContext(CartContext);
+  const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
   const [products, setProducts] = useState([]);
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupProduct, setPopupProduct] = useState(null);
@@ -27,28 +29,29 @@ function Cart() {
   const [popupSize, setPopupSize] = useState("");
   const navigate = useNavigate();
 
-useEffect(() => {
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch("http://localhost:5197/api/products");
-      if (res.ok) {
-        const data = await res.json();
+  const token = localStorage.getItem("token");
+  const wishlistContext = token ? useWishlist() : useGuestWishlist();
+  const { wishlist } = wishlistContext;
 
-        const list = data?.$values ?? data;
-
-        const productsWithSizes = (Array.isArray(list) ? list : []).map(p => ({
-          ...p,
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://localhost:5197/api/products");
+        if (res.ok) {
+          const data = await res.json();
+          const list = data?.$values ?? data;
+          const productsWithSizes = (Array.isArray(list) ? list : []).map(p => ({
+            ...p,
             sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ["S", "M", "L"] 
-        }));
-
-        setProducts(productsWithSizes);
+          }));
+          setProducts(productsWithSizes);
+        }
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch products:", err);
-    }
-  };
-  fetchProducts();
-}, []);
+    };
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     if (popupProduct) {
@@ -67,9 +70,7 @@ useEffect(() => {
   const hasCartItems = Array.isArray(cartItems) && cartItems.length > 0;
   const handleCheckout = () => navigate("/checkout");
   const handleShopNow = () => navigate("/store");
-
-const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
-
+  const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
 
   return (
     <div style={{ minHeight: "100vh", width: "100vw", paddingBottom: "120px", backgroundColor: "#f8f9fa", paddingTop: "80px" }}>
@@ -88,36 +89,80 @@ const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
             </button>
           </div>
 
-          <div style={{ marginTop: "40px" }}>
-            <h3>Recommended for you</h3>
-            <div className="row g-3 justify-content-center">
-              {recommendedProducts.map((prod) => (
-                <div key={prod.id} className="col-md-4">
-                  <div
-                    className="card p-3 h-100"
-                    style={{ cursor: "pointer" }}
-                    onClick={() => { setPopupProduct(prod); setPopupVisible(true); }}
-                  >
-                    <img
-                      src={getImageUrl(prod.imageUrl)}
-                      alt={prod.name}
-                      className="img-fluid"
-                      style={{ borderRadius: "6px", marginBottom: "8px", objectFit: "cover", height: "600px", width: "100%" }}
-                    />
-                    <p style={{ fontWeight: "600", fontSize: "16px" }}>{prod.name}</p>
-                    <p style={{ color: "#007bff", fontWeight: "bold" }}>{prod.price.toFixed(2)}€</p>
-                  </div>
-                </div>
-              ))}
+        <div style={{ marginTop: "60px" }}>
+  <h3>Recommended for you</h3>
+  <div className="container">
+    <div className="row g-2 justify-content-center">
+      {recommendedProducts.map((prod) => {
+        const isInWishlist = wishlistContext.isInWishlist(prod.id);
+
+        const handleFavorite = (e) => {
+          e.stopPropagation();
+          if (isInWishlist) wishlistContext.removeFromWishlist(prod.id);
+          else wishlistContext.addToWishlist(prod);
+        };
+
+                  return (
+                    <div key={prod.id} className="col-12 col-sm-6 col-md-4 col-lg-2">
+                      <div
+                        className="card p-3 h-100 position-relative"
+                        style={{ cursor: "pointer" }}
+                        onClick={() => { setPopupProduct(prod); setPopupVisible(true); }}
+                      >
+                        <img
+                          src={getImageUrl(prod.imageUrl)}
+                          alt={prod.name}
+                          className="img-fluid"
+                          style={{ borderRadius: "6px", marginBottom: "8px", objectFit: "cover", height: "300px", width: "100%" }}
+                        />
+                        <p style={{ fontWeight: "600", fontSize: "16px" }}>{prod.name}</p>
+                        <p style={{ color: "#007bff", fontWeight: "bold" }}>{prod.price.toFixed(2)}€</p>
+
+                        <button
+  onClick={handleFavorite}
+  style={{
+    position: "absolute",
+    top: "8px",
+    right: "8px",
+    background: "transparent",
+    border: "none",
+    fontSize: "1.5rem",
+    cursor: "pointer",
+  }}
+>
+  {isInWishlist ? "❤️" : "🤍"}
+</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </>
       ) : (
-        <>
-          {cartItems.map((item, index) => (
-            <CartItem key={index} item={item} onRemove={removeFromCart} onQuantityChange={updateQuantity} />
-          ))}
-          <hr />
+        <div className="container">
+          <div className="row g-3">
+            {cartItems.map((item, index) => (
+              <div key={index} className="col-12">
+              <CartItem
+  item={item}
+  onRemove={removeFromCart}
+  onQuantityChange={updateQuantity}
+  fromWishlist={!!item.fromWishlist}  
+  toggleWishlist={() => {
+    if (wishlistContext.isInWishlist(item.productId)) {
+      wishlistContext.removeFromWishlist(item.productId);
+    } else {
+      const product = products.find(p => p.id === item.productId);
+      if (product) wishlistContext.addToWishlist(product);
+    }
+  }}
+/>
+              </div>
+            ))}
+          </div>
+
           <div style={{ position: "fixed", bottom: 0, left: 0, width: "100%", backgroundColor: "white", borderTop: "1px solid #ddd", padding: "10px 20px", display: "flex", flexDirection: "column", alignItems: "center", zIndex: 1000 }}>
             <div style={{ marginBottom: "8px", fontSize: "18px", fontWeight: "600", color: "#004085" }}>Total: {totalPrice.toFixed(2)}€</div>
             <button
@@ -127,7 +172,7 @@ const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
               Checkout
             </button>
           </div>
-        </>
+        </div>
       )}
 
       {popupVisible && popupProduct && (
@@ -144,7 +189,7 @@ const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
             <p style={{ fontWeight: "bold", color: "#007bff" }}>{popupProduct.price.toFixed(2)}€</p>
 
             {popupProduct.sizes && popupProduct.sizes.length > 0 && (
-              <select value={popupSize} onChange={e => setPopupSize(e.target.value)} style={{ marginTop: "10px", padding: "6px 12px", fontSize: "16px", borderRadius: "6px", border: "1px solid #ccc" ,backgroundColor:"#ccc",color:"#351919ff"}}>
+              <select value={popupSize} onChange={e => setPopupSize(e.target.value)} style={{ marginTop: "10px", padding: "6px 12px", fontSize: "16px", borderRadius: "6px", border: "1px solid #ccc", backgroundColor: "#ccc", color: "#351919ff" }}>
                 {popupProduct.sizes.map(size => (
                   <option key={size} value={size}>{size}</option>
                 ))}
