@@ -40,7 +40,7 @@ import ShippingInfo from "./pages/faq/ShippingInfo";
 import Returns from "./pages/faq/Returns";
 import PaymentMethods from "./pages/faq/PaymentMethods";
 import { GuestWishlistProvider } from './context/GuestWishlistContext';
-
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const WishlistWrapper = () => {
   const token = localStorage.getItem("token");
@@ -102,6 +102,17 @@ function AppContent() {
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
         <Route path="/profile" element={<ProfileLayout />}>
+
+
+      <Route
+        path="/profile"
+         element={
+        <ProtectedRoute>
+           <ProfileLayout />
+        </ProtectedRoute>
+       }
+      ></Route>
+
           <Route index element={<PersonalData />} />
           <Route path="personal-data" element={<PersonalData />} />
           <Route path="orders" element={<Orders />} />
@@ -110,14 +121,66 @@ function AppContent() {
           <Route path="ratings" element={<Ratings />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
+
         <Route path="/guest-wishlist" element={<GuestWishlist onAddToCart={addToCart} />}/>
-        <Route path="/admin" element={<DashboardAdmin />} />
-        <Route path="/manage-users" element={<ManageUsers />} />
-        <Route path="/manage-products" element={<ManageProducts />} />
-        <Route path="/manage-purchases" element={<ManagePurchases />} />
-        <Route path="/manage-news" element={<ManageNews />} />
-        <Route path="/view-contact" element={<ViewContacts />} />
-        <Route path="/view-reviews" element={<ViewReviews />} />
+
+
+  <Route
+    path="/admin"
+    element={
+      <ProtectedRoute role="admin">
+        <DashboardAdmin />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-users"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageUsers />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-products"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageProducts />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-purchases"
+    element={
+      <ProtectedRoute role="admin">
+        <ManagePurchases />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-news"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageNews />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/view-contact"
+    element={
+      <ProtectedRoute role="admin">
+        <ViewContacts />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/view-reviews"
+    element={
+      <ProtectedRoute role="admin">
+        <ViewReviews />
+      </ProtectedRoute>
+    }
+  />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/refund" element={<RefundPolicy />} />

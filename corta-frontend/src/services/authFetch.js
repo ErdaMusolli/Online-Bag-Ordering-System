@@ -4,8 +4,13 @@ export async function authFetch(url, options = {}) {
   try {
   
     let token = localStorage.getItem('token');
-
+    const refreshToken = localStorage.getItem('refreshToken');
    
+     if (!token && !refreshToken) {
+      window.location.href = '/login';
+      return;
+    }
+
     const headers = {
       ...options.headers,
       Authorization: `Bearer ${token}`,
@@ -18,7 +23,7 @@ export async function authFetch(url, options = {}) {
     });
 
     
-    if (response.status === 401) {
+    if (response.status === 401 && refreshToken) {
       const newToken = await getNewAccessToken();
       if (!newToken) return response;
 

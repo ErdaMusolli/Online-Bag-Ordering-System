@@ -85,6 +85,10 @@ namespace Corta.Services
             user.Username = dto.Username;
             user.Email = dto.Email;
             user.Role = dto.Role;
+
+            user.BirthDate = dto.BirthDate;
+            user.Gender = dto.Gender;
+
             await _context.SaveChangesAsync();
             return true;
         }

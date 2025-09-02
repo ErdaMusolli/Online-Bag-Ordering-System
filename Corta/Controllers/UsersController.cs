@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Corta.Services;
 using Corta.DTOs;
+using System.Security.Claims;
 
 namespace Corta.Controllers
 {
@@ -16,7 +17,36 @@ namespace Corta.Controllers
             _userService = userService;
         }
 
-        
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMe()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var user = await _userService.GetUserByIdAsync(int.Parse(userId));
+            if (user == null) return NotFound();
+
+            return Ok(user);
+        }
+
+        [HttpPut("me")]
+        [Authorize]
+        public async Task<IActionResult> UpdateMe([FromBody] UserDto dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _userService.UpdateUserAsync(int.Parse(userId), dto);
+            if (!result) return NotFound();
+
+            return Ok("Profile updated successfully");
+        }
+
+
+
         [HttpGet]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> GetAll()
