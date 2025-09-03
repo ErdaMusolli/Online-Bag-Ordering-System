@@ -69,40 +69,38 @@ const Navbar = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <div className="d-flex w-100 justify-content-between align-items-center">
 
-        <form
+       <form
   className="ms-auto me-3"
   style={{ maxWidth: '400px', width: '100%' }}
   onSubmit={handleSearch}
 >
- <div style={{ position: 'relative' }}>
-  <input
-    type="search"
-    className="form-control rounded-pill ps-4 pe-5"
-    style={{ minWidth: '250px' }}
-    placeholder="Search products"
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-  />
-  <i
-    className="bi bi-search"
-    style={{
-      position: 'absolute',
-      right: '15px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#6c757d',
-      pointerEvents: 'none'
-    }}
-  ></i>
-</div>
-  <button
-    type="submit"
-    className="btn position-absolute end-0 top-50 translate-middle-y me-2 p-0 border-0 bg-transparent"
-    style={{ zIndex: 10 }}
-  >
-    
-  </button>
+  <div style={{ position: 'relative' }}>
+    <input
+      type="search"
+      className="form-control rounded-pill ps-4 pe-5"
+      placeholder="Search products"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+    <i
+      className="bi bi-search"
+      style={{
+        position: 'absolute',
+        right: '15px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: '#6c757d',
+        pointerEvents: 'none',
+      }}
+    />
+    <button
+      type="submit"
+      className="btn position-absolute end-0 top-50 translate-middle-y me-2 p-0 border-0 bg-transparent"
+      style={{ zIndex: 10 }}
+    ></button>
+  </div>
 </form>
+
     <ul className="navbar-nav d-flex flex-row align-items-center gap-2 ms-auto">
  <li className="nav-item position-relative">
   <Link

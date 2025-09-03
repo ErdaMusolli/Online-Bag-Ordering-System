@@ -9,14 +9,13 @@ namespace Corta.Models
         public int Stock { get; set; }
         public string? ImageUrl { get; set; }
         public string? Size { get; set; }
-        public bool IsNewArrival { get; set; } = false;
-        public bool IsBestseller { get; set; } = false;
-        public bool IsSpecialOffer { get; set; } = false;
-        public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
 
+        public DateTime CreatedAt { get; set; }
+        public int PurchaseCount { get; set; }
+        public decimal? OldPrice { get; set; }
+
+        public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
         public ICollection<PurchaseItem> PurchaseItems { get; set; } = new List<PurchaseItem>();
         public ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
-
-
-}
+    }
 }

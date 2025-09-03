@@ -30,6 +30,20 @@ function ProductItem({ product }) {
       style={{ cursor: "pointer" }}
       onClick={() => navigate(`/product/${product.id}`)}
     >
+      {product.badge && (
+  <span
+    className="position-absolute top-0 start-0 m-2"
+    style={{
+      backgroundColor: "#c0b7b6ff", 
+      color: "#fff",              
+      fontSize: "1.1rem",         
+      padding: "0.35em 0.65em",   
+      borderRadius: "0.5rem"     
+    }}
+  >
+    {product.badge}
+  </span>
+)}
       <img
         src={imagePath}
         alt={product.name}

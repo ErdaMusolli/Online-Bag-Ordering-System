@@ -18,51 +18,56 @@ function CartItem({ item, onRemove, onQuantityChange, fromWishlist = false, togg
     onQuantityChange(item.productId, item.size, item.quantity + 1);
   };
 
-    return (
+   return (
     <div className="cart-item-card" style={{ position: "relative" }}>
-  <img
-    src={getImageUrl(item.imageUrl)}
-    alt={item.name}
-    className="cart-item-image"
-  />
+      <img
+        src={getImageUrl(item.imageUrl)}
+        alt={item.name}
+        className="cart-item-image"
+        style={{ width: "200px", height: "200px", objectFit: "contain" }}
+      />
 
-  <div className="cart-item-details">
-    <div className="d-flex justify-content-between align-items-center">
-      <h5>{item.name}</h5>
-      {item.fromWishlist && (
-            <span style={{ fontSize: "1.5rem", color: "red" }}>❤️</span>
-          )}
+      <div className="cart-item-details">
+        <div className="d-flex justify-content-between align-items-center flex-wrap">
+          <h5 style={{ marginBottom: "0.5rem" }}>{item.name}</h5>
+          {fromWishlist && <span style={{ fontSize: "1.5rem", color: "red" }}>❤️</span>}
         </div>
 
-    {item.size && <p style={{ fontSize: "14px", color: "#555" }}>Size: {item.size}</p>}
-    <p style={{ fontWeight: "bold" }}>Price: {item.price.toFixed(2)} €</p>
+        {item.size && (
+          <p style={{ fontSize: "14px", color: "#555", marginBottom: "0.25rem" }}>
+            Size: {item.size}
+          </p>
+        )}
 
-    <div className="d-flex align-items-center gap-2 mt-2">
+        <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>
+          Price: {item.price.toFixed(2)} €
+        </p>
+
+        <div className="d-flex align-items-center gap-2 flex-wrap">
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={handleDecrease}
+            disabled={item.quantity <= 1}
+          >
+            -
+          </button>
+          <span>Quantity: {item.quantity}</span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={handleIncrease}
+          >
+            +
+          </button>
+        </div>
+      </div>
+
       <button
-        className="btn btn-sm btn-outline-secondary"
-        onClick={handleDecrease}
-        disabled={item.quantity <= 1}
+        className="btn btn-danger cart-item-delete mt-2 mt-md-0"
+        onClick={() => onRemove(item.productId, item.size)}
       >
-        -
-      </button>
-      <span>Quantity: {item.quantity}</span>
-      <button
-        className="btn btn-sm btn-outline-secondary"
-        onClick={handleIncrease}
-      >
-        +
+        Delete
       </button>
     </div>
-  </div>
-
-  <button
-    className="btn btn-danger cart-item-delete"
-    onClick={() => onRemove(item.productId, item.size)}
-  >
-    Delete
-  </button>
-</div>
-
   );
 }
 

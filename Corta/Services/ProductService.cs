@@ -33,12 +33,11 @@ namespace Corta.Services
                 Name = product.Name,
                 Description = product.Description ?? "",
                 Price = product.Price,
+                OldPrice = product.OldPrice,
                 Stock = product.Stock,
                 ImageUrl = product.ImageUrl,
                 Size = product.Size,
-                IsNewArrival = product.IsNewArrival,
-                IsBestseller = product.IsBestseller,
-                IsSpecialOffer = product.IsSpecialOffer,
+        
                 ProductImages = product.ProductImages
                     .Select(pi => new ProductImageDto
                     {
@@ -57,12 +56,12 @@ namespace Corta.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 Price = dto.Price,
+                OldPrice = dto.OldPrice,
                 Stock = dto.Stock,
                 ImageUrl = dto.ImageUrl,
                 Size = dto.Size,
-                IsNewArrival = dto.IsNewArrival,
-                IsBestseller = dto.IsBestseller,
-                IsSpecialOffer = dto.IsSpecialOffer
+                CreatedAt = DateTime.UtcNow
+             
             };
 
             if (dto.ProductImages != null)
@@ -92,26 +91,25 @@ namespace Corta.Services
     product.Name = dto.Name;
     product.Description = dto.Description;
     product.Price = dto.Price;
+    product.OldPrice = dto.OldPrice;
     product.Stock = dto.Stock;
     product.ImageUrl = dto.ImageUrl;
     product.Size = dto.Size;
-    product.IsNewArrival = dto.IsNewArrival;
-    product.IsBestseller = dto.IsBestseller;
-    product.IsSpecialOffer = dto.IsSpecialOffer;
 
     if (dto.ProductImages != null && dto.ProductImages.Any())
-{
-    foreach (var img in dto.ProductImages)
     {
-        if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
+        foreach (var img in dto.ProductImages)
         {
-            product.ProductImages.Add(new ProductImage
+            if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
             {
-                ImageUrl = img.ImageUrl
-            });
+                product.ProductImages.Add(new ProductImage
+                {
+                    ImageUrl = img.ImageUrl
+                });
+            }
         }
     }
-}
+
     await _context.SaveChangesAsync();
 
     return new ProductDto
@@ -120,12 +118,10 @@ namespace Corta.Services
         Name = product.Name,
         Description = product.Description,
         Price = product.Price,
+        OldPrice = product.OldPrice,
         Stock = product.Stock,
         ImageUrl = product.ImageUrl,
         Size = product.Size,
-        IsNewArrival = product.IsNewArrival,
-        IsBestseller = product.IsBestseller,
-        IsSpecialOffer = product.IsSpecialOffer,
         ProductImages = product.ProductImages
             .Select(pi => new ProductImageDto
             {

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Corta.DTOs;
 using Corta.Services;
 
@@ -17,31 +16,118 @@ namespace Corta.Controllers
         }
 
         [HttpGet]
-       public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll()
+        {
+            var products = await _productService.GetAllAsync();
+
+            var response = products.Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Description,
+                p.Price,
+                p.OldPrice,
+                p.Stock,
+                p.ImageUrl,
+                p.Size,
+                ProductImages = p.ProductImages.Select(pi => new
+                {
+                    pi.Id,
+                    pi.ProductId,
+                    pi.ImageUrl
+                }).ToList()
+            });
+
+            return Ok(response);
+        }
+
+        [HttpGet("bestsellers")]
+        public async Task<IActionResult> GetBestsellers()
+        {
+            var products = await _productService.GetAllAsync();
+            var bestsellers = products
+                .OrderByDescending(p => p.PurchaseCount)
+                .Take(4)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    p.OldPrice,
+                    p.Stock,
+                    p.ImageUrl,
+                    p.Size,
+                    p.PurchaseCount,
+                    ProductImages = p.ProductImages.Select(pi => new
+                    {
+                        pi.Id,
+                        pi.ProductId,
+                        pi.ImageUrl
+                    }).ToList()
+                });
+            return Ok(bestsellers);
+        }
+
+        [HttpGet("newarrivals")]
+        public async Task<IActionResult> GetNewArrivals()
+        {
+            var products = await _productService.GetAllAsync();
+            var tenDaysAgo = DateTime.UtcNow.AddDays(-30);
+            var newArrivals = products
+                .Where(p => p.CreatedAt >= tenDaysAgo)
+                .OrderByDescending(p => p.CreatedAt)
+                .Take(30)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    p.Description,
+                    p.Price,
+                    p.OldPrice,
+                    p.Stock,
+                    p.ImageUrl,
+                    p.Size,
+                    ProductImages = p.ProductImages.Select(pi => new
+                    {
+                        pi.Id,
+                        pi.ProductId,
+                        pi.ImageUrl
+                    }).ToList()
+                });
+            return Ok(newArrivals);
+        }
+        [HttpGet("specialoffers")]
+public async Task<IActionResult> GetSpecialOffers()
 {
     var products = await _productService.GetAllAsync();
-
-    var response = products.Select(p => new
-    {
-        p.Id,
-        p.Name,
-        p.Description,
-        p.Price,
-        p.Stock,
-        p.ImageUrl,
-        p.Size,
-        ProductImages = p.ProductImages.Select(pi => new
+    var specialOffers = products
+        .Where(p => p.OldPrice != null && p.Price < p.OldPrice)
+        .OrderByDescending(p => (p.OldPrice - p.Price) / p.OldPrice)
+        .Take(30)
+        .Select(p => new
         {
-            pi.Id,
-            pi.ProductId,
-            pi.ImageUrl
-        }).ToList()
-    });
+            p.Id,
+            p.Name,
+            p.Description,
+            p.Price,
+            p.OldPrice,
+            p.Stock,
+            p.ImageUrl,
+            p.Size,
+            ProductImages = p.ProductImages.Select(pi => new
+            {
+                pi.Id,
+                pi.ProductId,
+                pi.ImageUrl
+            }).ToList()
+        });
 
-    return Ok(response);
+    return Ok(specialOffers);
 }
+        
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var product = await _productService.GetByIdAsync(id);
@@ -54,6 +140,7 @@ namespace Corta.Controllers
                 product.Name,
                 product.Description,
                 product.Price,
+                product.OldPrice,
                 product.Stock,
                 product.ImageUrl,
                 product.Size,
@@ -75,13 +162,10 @@ namespace Corta.Controllers
             {
                 var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                 Directory.CreateDirectory(uploadsPath);
-
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
                 var filePath = Path.Combine(uploadsPath, fileName);
-
                 using var stream = new FileStream(filePath, FileMode.Create);
                 await image.CopyToAsync(stream);
-
                 dto.ImageUrl = $"/images/{fileName}";
             }
 
@@ -92,16 +176,12 @@ namespace Corta.Controllers
                 {
                     var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                     Directory.CreateDirectory(uploadsPath);
-
                     var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
                     var filePath = Path.Combine(uploadsPath, fileName);
-
                     using var stream = new FileStream(filePath, FileMode.Create);
                     await img.CopyToAsync(stream);
-
                     productImages.Add(new ProductImageDto { ImageUrl = $"/images/{fileName}" });
                 }
-
                 dto.ProductImages = productImages;
             }
 
@@ -110,22 +190,22 @@ namespace Corta.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromForm] ProductDto dto, IFormFile? image, [FromForm] List<IFormFile>? additionalImages)
+        public async Task<IActionResult> Update(int id, [FromForm] ProductDto dto, IFormFile? image, [FromForm] List<IFormFile>? additionalImages, [FromForm] string? existingMainImageUrl)
         {
             if (image != null && image.Length > 0)
             {
                 var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                 Directory.CreateDirectory(uploadsPath);
-
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
                 var filePath = Path.Combine(uploadsPath, fileName);
-
                 using var stream = new FileStream(filePath, FileMode.Create);
                 await image.CopyToAsync(stream);
-
                 dto.ImageUrl = $"/images/{fileName}";
-            }
-
+             }
+             else if (!string.IsNullOrEmpty(existingMainImageUrl))
+             {
+                dto.ImageUrl = existingMainImageUrl; 
+             }
             if (additionalImages != null && additionalImages.Any())
             {
                 var productImages = new List<ProductImageDto>();
@@ -133,16 +213,12 @@ namespace Corta.Controllers
                 {
                     var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                     Directory.CreateDirectory(uploadsPath);
-
                     var fileName = Guid.NewGuid().ToString() + Path.GetExtension(img.FileName);
                     var filePath = Path.Combine(uploadsPath, fileName);
-
                     using var stream = new FileStream(filePath, FileMode.Create);
                     await img.CopyToAsync(stream);
-
                     productImages.Add(new ProductImageDto { ImageUrl = $"/images/{fileName}" });
                 }
-
                 dto.ProductImages = productImages;
             }
 

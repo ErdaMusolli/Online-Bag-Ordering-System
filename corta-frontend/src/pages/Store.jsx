@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import ProductList from "../components/products/ProductList";
 import { useWishlist } from "../context/WishlistContext";
+import { useLocation } from "react-router-dom";
 
 function Store({ cart, setCart }) {
   const [products, setProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("");
   const [token, setToken] = useState(null);
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const location = useLocation();
+  const type = location.state?.type || "";
 
 
   useEffect(() => {
@@ -15,19 +18,21 @@ function Store({ cart, setCart }) {
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5197/api/products")
-      .then((res) => res.json())
-      .then((data) => {
-        const productsArray = data.$values || data.products || [];
-        setProducts(productsArray);
-      })
-      .catch(console.error);
-  }, []);
+    if (location.state?.products) {
+      setProducts(location.state.products);
+    } else {
+      fetch("http://localhost:5197/api/products")
+        .then((res) => res.json())
+        .then((data) => {
+          const productsArray = data.$values || data.products || [];
+          setProducts(productsArray);
+        })
+        .catch(console.error);
+    }
+  }, [location.state]);
 
-  
   const handleAddToCart = (product, quantity = 1, size = "S") => {
     const productToAdd = { ...product, quantity, size, productId: product.id };
-
     if (token) {
       return fetch("http://localhost:5197/api/cart/items", {
         method: "POST",
@@ -39,9 +44,7 @@ function Store({ cart, setCart }) {
       })
         .then((res) => {
           if (!res.ok) throw new Error("Failed to add to cart");
-          const existing = cart.find(
-            (i) => i.productId === product.id && i.size === size
-          );
+          const existing = cart.find((i) => i.productId === product.id && i.size === size);
           let updatedCart;
           if (existing) {
             updatedCart = cart.map((i) =>
@@ -57,9 +60,7 @@ function Store({ cart, setCart }) {
         })
         .catch(console.error);
     } else {
-      const existing = cart.find(
-        (i) => i.productId === product.id && i.size === size
-      );
+      const existing = cart.find((i) => i.productId === product.id && i.size === size);
       let updatedCart;
       if (existing) {
         updatedCart = cart.map((i) =>
@@ -80,14 +81,35 @@ function Store({ cart, setCart }) {
       return Promise.resolve(updatedCart);
     }
   };
+  const sortedProducts = [...products];
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sortOrder === "asc") return a.price - b.price;
-    if (sortOrder === "desc") return b.price - a.price;
-    return 0;
-  });
+  if (sortOrder === "asc") {
+    sortedProducts.sort((a, b) => a.price - b.price);
+  } else if (sortOrder === "desc") {
+    sortedProducts.sort((a, b) => b.price - a.price);
+  }
 
-    return (
+  let productsWithBadge;
+
+  if (type === "newarrivals") {
+    const newestProduct = sortedProducts.reduce((latest, product) => {
+      return !latest || new Date(product.createdAt) > new Date(latest.createdAt)
+        ? product
+        : latest;
+    }, null);
+
+    productsWithBadge = newestProduct
+      ? [
+          { ...newestProduct, badge: "New Arrival" },
+          ...sortedProducts.filter((p) => p.id !== newestProduct.id),
+        ]
+      : sortedProducts;
+  } else {
+    productsWithBadge = sortedProducts;
+  }
+
+
+  return (
     <div className="store-container">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 w-100">
         <h1
@@ -107,14 +129,14 @@ function Store({ cart, setCart }) {
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
         >
-          <option value="">Sort by Price</option>
-          <option value="asc">Lowest to Highest</option>
-          <option value="desc">Highest to Lowest</option>
+          <option value="">Sort by</option>
+          <option value="asc">Price: Lowest to Highest</option>
+          <option value="desc">Price: Highest to Lowest</option>
         </select>
       </div>
 
-        <ProductList
-        products={sortedProducts}
+      <ProductList
+        products={productsWithBadge}
         onAddToCart={handleAddToCart}
         onToggleWishlist={(product) =>
           isInWishlist(product.id)
