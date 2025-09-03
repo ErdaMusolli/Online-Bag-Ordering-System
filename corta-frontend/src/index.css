@@ -235,3 +235,15 @@ footer {
     padding: 0;
   }
 }
+.manage-products-container {
+  padding: 20px; 
+  padding-top: 120px; 
+}
+
+@media (min-width: 768px) {
+  .manage-products-container {
+    padding-top: 180px; 
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+}

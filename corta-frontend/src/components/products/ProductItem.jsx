@@ -65,9 +65,16 @@ function ProductItem({ product }) {
         {isInWishlist(product.id) ? "❤️" : "🤍"}
       </button>
       <div className="card-body text-center">
-        <h5 className="card-title">{product.name}</h5>
-        <p className="fw-bold">{product.price.toFixed(2)}€</p>
-      </div>
+  <h5 className="card-title">{product.name}</h5>
+  <p className="fw-bold">
+    {product.oldPrice && product.oldPrice > 0 && product.oldPrice !== product.price && (
+      <span style={{ textDecoration: 'line-through', color: '#6c757d', marginRight: '5px' }}>
+        {product.oldPrice.toFixed(2)}€
+      </span>
+    )}
+    <span style={{ color: '#007bff' }}>{product.price.toFixed(2)}€</span>
+  </p>
+</div>
     </div>
   );
 }

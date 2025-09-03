@@ -40,8 +40,24 @@ function CartItem({ item, onRemove, onQuantityChange, fromWishlist = false, togg
         )}
 
         <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>
-          Price: {item.price.toFixed(2)} €
-        </p>
+  {item.oldPrice && item.price < item.oldPrice ? (
+    <>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#6c757d",
+          marginRight: "5px"
+        }}
+      >
+        {item.oldPrice.toFixed(2)} €
+      </span>
+      <span>{item.price.toFixed(2)} €</span>
+    </>
+  ) : (
+    <span>{item.price.toFixed(2)} €</span>
+  )}
+</p>
+
 
         <div className="d-flex align-items-center gap-2 flex-wrap">
           <button

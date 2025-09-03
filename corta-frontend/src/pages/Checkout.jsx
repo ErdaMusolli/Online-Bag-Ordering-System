@@ -18,27 +18,21 @@ function Checkout() {
   const [success, setSuccess] = useState("");
   const [shippingOption, setShippingOption] = useState("regular");
 
-  const shippingCosts = {
-    regular: 0,
-    express: 5,
-    nextday: 10,
-  };
+  const shippingCosts = { regular: 0, express: 5, nextday: 10 };
 
   const totalPrice =
-    cartItems.reduce(
-      (sum, item) => sum + (item.price ?? item.product?.price ?? 0) * (item.quantity ?? 1),
-      0
-    ) + shippingCosts[shippingOption];
+    cartItems.reduce((sum, item) => sum + (item.price ?? item.product?.price ?? 0) * (item.quantity ?? 1), 0) + shippingCosts[shippingOption];
 
   const handleCheckout = async () => {
     const userId = getUserIdFromToken();
-    if (!userId) {
-      setError("Please login first!");
-      setTimeout(() => navigate("/login"), 1500); // pas 1.5 sekondash ridrejton tek login
-      return;
-    }
-
+    if (!userId) { setError("Please login first!"); setTimeout(() => navigate("/login"), 1500); return; }
     if (!cartItems || cartItems.length === 0) return setError("Your cart is empty!");
+    const outOfStockItems = cartItems.filter(item => item.stock <= 0);
+  if (outOfStockItems.length > 0) {
+    const names = outOfStockItems.map(i => i.productName || i.name).join(", ");
+    setError(`The following items are out of stock: ${names}`);
+    return;
+  }
 
     setLoading(true);
     setError("");
@@ -61,38 +55,22 @@ function Checkout() {
     try {
       const res = await fetch("http://localhost:5197/api/purchase", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify(purchaseDto),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Checkout failed");
-      }
+      if (!res.ok) { const errorData = await res.json(); throw new Error(errorData.error || "Checkout failed"); }
 
       const data = await res.json();
       setSuccess(`Purchase completed successfully! ID: ${data.id}`);
       setError("");
 
-      await fetch("http://localhost:5197/api/cart", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      await fetch("http://localhost:5197/api/cart", { method: "DELETE", headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } });
 
       clearCart();
-      setTimeout(() => {
-        setSuccess("");
-        navigate("/store");
-      }, 1500);
+      setTimeout(() => { setSuccess(""); navigate("/store"); }, 1500);
 
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); } finally { setLoading(false); }
   };
 
   return (
@@ -108,14 +86,7 @@ function Checkout() {
             <div key={index} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px", borderBottom:"1px solid #eee", paddingBottom:"8px" }}>
               <div style={{ display:"flex", alignItems:"center", gap:"12px" }}>
                 <img 
-                  src={
-                    item.imageUrl 
-                      ? (item.imageUrl.startsWith("http") 
-                          ? item.imageUrl 
-                          : `http://localhost:5197${item.imageUrl.replace("public/", "")}`
-                        )
-                      : "/default-product.jpg"
-                  }
+                  src={item.imageUrl ? (item.imageUrl.startsWith("http") ? item.imageUrl : `http://localhost:5197${item.imageUrl.replace("public/", "")}`) : "/default-product.jpg"}
                   alt={item.productName || item.name}
                   style={{ width:"80px", height:"80px", objectFit:"cover", borderRadius:"6px", border:"1px solid #ccc" }}
                   onError={(e) => { e.target.onerror = null; e.target.src="/default-product.jpg"; }}

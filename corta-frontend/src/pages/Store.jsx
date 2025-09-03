@@ -11,7 +11,6 @@ function Store({ cart, setCart }) {
   const location = useLocation();
   const type = location.state?.type || "";
 
-
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     if (savedToken) setToken(savedToken);
@@ -32,6 +31,7 @@ function Store({ cart, setCart }) {
   }, [location.state]);
 
   const handleAddToCart = (product, quantity = 1, size = "S") => {
+    if (product.stock <= 0) return;
     const productToAdd = { ...product, quantity, size, productId: product.id };
     if (token) {
       return fetch("http://localhost:5197/api/cart/items", {
@@ -81,51 +81,39 @@ function Store({ cart, setCart }) {
       return Promise.resolve(updatedCart);
     }
   };
-  const sortedProducts = [...products];
 
+  const sortedProducts = [...products];
   if (sortOrder === "asc") {
     sortedProducts.sort((a, b) => a.price - b.price);
   } else if (sortOrder === "desc") {
     sortedProducts.sort((a, b) => b.price - a.price);
   }
 
-  let productsWithBadge;
-
-  if (type === "newarrivals") {
-    const newestProduct = sortedProducts.reduce((latest, product) => {
-      return !latest || new Date(product.createdAt) > new Date(latest.createdAt)
-        ? product
-        : latest;
-    }, null);
-
-    productsWithBadge = newestProduct
-      ? [
-          { ...newestProduct, badge: "New Arrival" },
-          ...sortedProducts.filter((p) => p.id !== newestProduct.id),
-        ]
-      : sortedProducts;
-  } else {
-    productsWithBadge = sortedProducts;
-  }
-
+  let productsWithBadge = sortedProducts.map((product) => {
+    let badge = product.badge || "";
+    if (type === "newarrivals") {
+      const newestProduct = sortedProducts.reduce((latest, p) =>
+        !latest || new Date(p.createdAt) > new Date(latest.createdAt) ? p : latest
+      , null);
+      if (newestProduct && product.id === newestProduct.id) badge = "New Arrival";
+    }
+    if (type === "bestsellers") {
+      const bestsellersIds = new Set(sortedProducts.filter(p => p.badge === "Best Seller").map(p => p.id));
+      if (bestsellersIds.has(product.id)) badge = "Best Seller";
+    }
+    if (product.stock <= 0) badge = "Out of Stock";
+    return { ...product, badge };
+  });
 
   return (
     <div className="store-container">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 w-100">
-        <h1
-          className="text-center flex-grow-1 mb-3 mb-md-0"
-          style={{ fontFamily: "'Libre Baskerville', serif" }}
-        >
+        <h1 className="text-center flex-grow-1 mb-3 mb-md-0" style={{ fontFamily: "'Libre Baskerville', serif" }}>
           The Boutique
         </h1>
         <select
           className="form-select form-select-sm w-auto"
-          style={{
-            fontSize: "1.1rem",
-            padding: "0.37rem 1.8rem",
-            borderRadius: "1rem",
-            fontFamily: "'Roboto', sans-serif",
-          }}
+          style={{ fontSize: "1.1rem", padding: "0.37rem 1.8rem", borderRadius: "1rem", fontFamily: "'Roboto', sans-serif" }}
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
         >

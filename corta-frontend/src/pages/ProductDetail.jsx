@@ -18,11 +18,18 @@ function ProductDetail() {
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { wishlist: guestWishlist, addToWishlist: addGuestWishlist, removeFromWishlist: removeGuestWishlist, isInWishlist: isInGuestWishlist } = useGuestWishlist();
   const token = localStorage.getItem("token");
+  const [badge, setBadge] = useState("");
 
   useEffect(() => {
     fetch(`http://localhost:5197/api/products/${id}`)
       .then((res) => res.json())
-      .then(setProduct)
+      .then((data) => {
+        setProduct(data);
+        let newBadge = "";
+        if (data.badge === "Best Seller") newBadge = "Best Seller";
+        else if (data.badge === "New Arrival") newBadge = "New Arrival";
+        setBadge(newBadge);
+      })
       .catch(console.error);
   }, [id]);
 
@@ -38,6 +45,7 @@ function ProductDetail() {
   const isInUserWishlist = token ? isInWishlist(product.id) : isInGuestWishlist(product.id);
 
   const handleAddToCart = () => {
+    if (product.stock <= 0) return;
     addToCart(product, quantity, size, isInUserWishlist);
     navigate("/cart");
   };
@@ -52,6 +60,7 @@ function ProductDetail() {
 
   const handlePrev = () => setMainIndex((mainIndex - 1 + images.length) % images.length);
   const handleNext = () => setMainIndex((mainIndex + 1) % images.length);
+
   return (
     <div className="container-fluid" style={{ paddingTop: "120px" }}>
       <div className="row justify-content-center">
@@ -82,6 +91,15 @@ function ProductDetail() {
             >
               &#8250;
             </button>
+            {badge && (
+              <span
+                className={`position-absolute top-0 start-0 m-2 px-2 py-1 rounded ${
+                  badge === "Out of Stock" ? "bg-danger" : "bg-success"
+                } text-white`}
+              >
+                {badge}
+              </span>
+            )}
           </div>
 
           <div className="d-flex gap-2 flex-wrap justify-content-center mt-3">
@@ -106,8 +124,16 @@ function ProductDetail() {
 
         <div className="col-12 col-md-6">
           <h2 className="fw-bold">{product.name}</h2>
-          <h4 className="text-primary mb-3">{product.price.toFixed(2)} €</h4>
-
+         <div className="mb-3">
+  {product.oldPrice && product.oldPrice > product.price && (
+    <div className="text-muted text-decoration-line-through">
+      {Number(product.oldPrice).toFixed(2)} €
+    </div>
+  )}
+  <div className="fw-bold text-primary">
+    {Number(product.price).toFixed(2)} €
+  </div>
+</div>
           <div className="mb-3" style={{ maxWidth: "150px" }}>
             <label className="form-label">Size:</label>
             <select className="form-select" value={size} onChange={(e) => setSize(e.target.value)}>
@@ -128,27 +154,32 @@ function ProductDetail() {
             />
           </div>
 
-          <div className=" gap-5 mt-5">
+          <div className="gap-5 mt-5">
             <button
               className="btn btn-lg flex-grow-1"
               onClick={handleAddToCart}
-              style={{ backgroundColor: "#536487ff", color: "white", border: "#536487ff" }}
+              style={{
+                backgroundColor: product.stock > 0 ? "#536487ff" : "#6c757d",
+                color: "white",
+                border: "none",
+              }}
+              disabled={product.stock <= 0}
             >
-              Add to Cart
+              {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
             </button>
-           <button
-  className="btn btn-lg"
-  onClick={handleFavorite}
-  style={{
-    backgroundColor: "transparent",
-    border: "none",
-    fontSize: "1.5rem",
-    padding: "0 12px",
-    cursor: "pointer",
-  }}
->
-  {isInUserWishlist ? "❤️" : "🤍"}
-</button>
+            <button
+              className="btn btn-lg"
+              onClick={handleFavorite}
+              style={{
+                backgroundColor: "transparent",
+                border: "none",
+                fontSize: "1.5rem",
+                padding: "0 12px",
+                cursor: "pointer",
+              }}
+            >
+              {isInUserWishlist ? "❤️" : "🤍"}
+            </button>
           </div>
 
           <div className="mt-3">

@@ -13,10 +13,12 @@ namespace Corta.Controllers
     public class PurchaseController : ControllerBase
     {
         private readonly PurchaseService _purchaseService;
+        private readonly ProductService _productService; 
 
-        public PurchaseController(PurchaseService purchaseService)
+        public PurchaseController(PurchaseService purchaseService, ProductService productService)
         {
             _purchaseService = purchaseService;
+            _productService = productService;
         }
 
         [HttpGet]
@@ -77,8 +79,13 @@ namespace Corta.Controllers
             try
             {
                 var purchase = await _purchaseService.CreateAsync(dto);
-                return Ok(purchase);
-            }
+                foreach (var item in purchase.PurchaseItems)
+        {
+            await _productService.IncreasePurchaseCountAsync(item.ProductId, item.Quantity);
+        }
+
+        return Ok(purchase);
+    }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { error = ex.Message });

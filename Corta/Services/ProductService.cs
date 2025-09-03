@@ -37,7 +37,7 @@ namespace Corta.Services
                 Stock = product.Stock,
                 ImageUrl = product.ImageUrl,
                 Size = product.Size,
-        
+                PurchaseCount = product.PurchaseCount,
                 ProductImages = product.ProductImages
                     .Select(pi => new ProductImageDto
                     {
@@ -60,8 +60,8 @@ namespace Corta.Services
                 Stock = dto.Stock,
                 ImageUrl = dto.ImageUrl,
                 Size = dto.Size,
-                CreatedAt = DateTime.UtcNow
-             
+                CreatedAt = DateTime.UtcNow,
+                PurchaseCount = dto.PurchaseCount
             };
 
             if (dto.ProductImages != null)
@@ -79,58 +79,70 @@ namespace Corta.Services
             await _context.SaveChangesAsync();
             return product;
         }
-
-      public async Task<ProductDto?> UpdateAsync(int id, ProductDto dto)
-{
-    var product = await _context.Products
-        .Include(p => p.ProductImages)
-        .FirstOrDefaultAsync(p => p.Id == id);
-
-    if (product == null) return null;
-
-    product.Name = dto.Name;
-    product.Description = dto.Description;
-    product.Price = dto.Price;
-    product.OldPrice = dto.OldPrice;
-    product.Stock = dto.Stock;
-    product.ImageUrl = dto.ImageUrl;
-    product.Size = dto.Size;
-
-    if (dto.ProductImages != null && dto.ProductImages.Any())
-    {
-        foreach (var img in dto.ProductImages)
+        public async Task<ProductDto?> UpdateAsync(int id, ProductDto dto)
         {
-            if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
-            {
-                product.ProductImages.Add(new ProductImage
-                {
-                    ImageUrl = img.ImageUrl
-                });
-            }
-        }
+            var product = await _context.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null) return null;
+
+            product.Name = dto.Name;
+            product.Description = dto.Description;
+             if (dto.OldPrice.HasValue && dto.OldPrice.Value > 0)
+    {
+        product.OldPrice = dto.OldPrice;
+
+        product.Price = dto.Price;
+    }
+    else
+    {
+        product.OldPrice = null;
+        product.Price = dto.Price;
     }
 
-    await _context.SaveChangesAsync();
+            product.Stock = dto.Stock;
+            product.ImageUrl = dto.ImageUrl;
+            product.Size = dto.Size;
+            product.PurchaseCount = dto.PurchaseCount;
 
-    return new ProductDto
-    {
-        Id = product.Id,
-        Name = product.Name,
-        Description = product.Description,
-        Price = product.Price,
-        OldPrice = product.OldPrice,
-        Stock = product.Stock,
-        ImageUrl = product.ImageUrl,
-        Size = product.Size,
-        ProductImages = product.ProductImages
-            .Select(pi => new ProductImageDto
+            if (dto.ProductImages != null && dto.ProductImages.Any())
             {
-                Id = pi.Id,
-                ProductId = pi.ProductId,
-                ImageUrl = pi.ImageUrl
-            }).ToList()
-    };
-}
+                foreach (var img in dto.ProductImages)
+                {
+                    if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
+                    {
+                        product.ProductImages.Add(new ProductImage
+                        {
+                            ImageUrl = img.ImageUrl
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                OldPrice = product.OldPrice,
+                Stock = product.Stock,
+                ImageUrl = product.ImageUrl,
+                Size = product.Size,
+                PurchaseCount = product.PurchaseCount,
+                ProductImages = product.ProductImages
+                    .Select(pi => new ProductImageDto
+                    {
+                        Id = pi.Id,
+                        ProductId = pi.ProductId,
+                        ImageUrl = pi.ImageUrl
+                    }).ToList()
+            };
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -140,5 +152,24 @@ namespace Corta.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> DecreaseStockAsync(int productId, int quantity)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null || product.Stock < quantity) return false;
+
+            product.Stock -= quantity;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> IncreasePurchaseCountAsync(int productId, int quantity)
+{
+    var product = await _context.Products.FindAsync(productId);
+    if (product == null) return false;
+
+    product.PurchaseCount += quantity;
+    await _context.SaveChangesAsync();
+    return true;
+}
     }
 }

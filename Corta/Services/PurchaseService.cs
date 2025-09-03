@@ -70,6 +70,10 @@ namespace Corta.Services
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
                 if (product == null)
                     throw new ArgumentException($"Product with ID {itemDto.ProductId} does not exist.");
+                if (product.Stock < itemDto.Quantity)
+                    throw new ArgumentException($"Not enough stock for {product.Name}");
+                    product.Stock -= itemDto.Quantity; 
+        _context.Products.Update(product);
 
                 purchaseItems.Add(new PurchaseItem
                 {

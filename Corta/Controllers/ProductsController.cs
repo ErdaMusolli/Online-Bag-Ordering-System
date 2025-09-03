@@ -28,6 +28,8 @@ namespace Corta.Controllers
                 p.Price,
                 p.OldPrice,
                 p.Stock,
+                IsOutOfStock = p.Stock <= 0,
+                p.PurchaseCount,
                 p.ImageUrl,
                 p.Size,
                 ProductImages = p.ProductImages.Select(pi => new
@@ -56,6 +58,7 @@ namespace Corta.Controllers
                     p.Price,
                     p.OldPrice,
                     p.Stock,
+                    IsOutOfStock = p.Stock <= 0,
                     p.ImageUrl,
                     p.Size,
                     p.PurchaseCount,
@@ -86,6 +89,8 @@ namespace Corta.Controllers
                     p.Price,
                     p.OldPrice,
                     p.Stock,
+                    IsOutOfStock = p.Stock <= 0,
+                    p.PurchaseCount,
                     p.ImageUrl,
                     p.Size,
                     ProductImages = p.ProductImages.Select(pi => new
@@ -97,42 +102,13 @@ namespace Corta.Controllers
                 });
             return Ok(newArrivals);
         }
-        [HttpGet("specialoffers")]
-public async Task<IActionResult> GetSpecialOffers()
-{
-    var products = await _productService.GetAllAsync();
-    var specialOffers = products
-        .Where(p => p.OldPrice != null && p.Price < p.OldPrice)
-        .OrderByDescending(p => (p.OldPrice - p.Price) / p.OldPrice)
-        .Take(30)
-        .Select(p => new
-        {
-            p.Id,
-            p.Name,
-            p.Description,
-            p.Price,
-            p.OldPrice,
-            p.Stock,
-            p.ImageUrl,
-            p.Size,
-            ProductImages = p.ProductImages.Select(pi => new
-            {
-                pi.Id,
-                pi.ProductId,
-                pi.ImageUrl
-            }).ToList()
-        });
 
-    return Ok(specialOffers);
-}
-        
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
             var product = await _productService.GetByIdAsync(id);
-            if (product == null)
-                return NotFound();
+            if (product == null) return NotFound();
 
             var response = new
             {
@@ -142,6 +118,8 @@ public async Task<IActionResult> GetSpecialOffers()
                 product.Price,
                 product.OldPrice,
                 product.Stock,
+                IsOutOfStock = product.Stock <= 0,
+                product.PurchaseCount,
                 product.ImageUrl,
                 product.Size,
                 ProductImages = product.ProductImages.Select(pi => new
@@ -154,6 +132,7 @@ public async Task<IActionResult> GetSpecialOffers()
 
             return Ok(response);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] ProductDto dto, IFormFile? image, [FromForm] List<IFormFile>? additionalImages)
@@ -201,11 +180,12 @@ public async Task<IActionResult> GetSpecialOffers()
                 using var stream = new FileStream(filePath, FileMode.Create);
                 await image.CopyToAsync(stream);
                 dto.ImageUrl = $"/images/{fileName}";
-             }
-             else if (!string.IsNullOrEmpty(existingMainImageUrl))
-             {
-                dto.ImageUrl = existingMainImageUrl; 
-             }
+            }
+            else if (!string.IsNullOrEmpty(existingMainImageUrl))
+            {
+                dto.ImageUrl = existingMainImageUrl;
+            }
+
             if (additionalImages != null && additionalImages.Any())
             {
                 var productImages = new List<ProductImageDto>();
