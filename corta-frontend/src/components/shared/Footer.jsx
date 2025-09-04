@@ -16,27 +16,63 @@ const Footer = () => {
           <div className="col-md-3 mb-3">
             <h6 className="fw-bold">Policies</h6>
             <ul className="list-unstyled">
-              <li><Link to="/privacy-policy" className="text-decoration-none text-dark">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="text-decoration-none text-dark">Terms & Conditions</Link></li>
-              <li><Link to="/refund" className="text-decoration-none text-dark">Refund Policy</Link></li>
+              <li>
+                <Link to="/privacy-policy" className="text-decoration-none text-dark">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-decoration-none text-dark">
+                  Terms & Conditions
+                </Link>
+              </li>
+              <li>
+                <Link to="/refund" className="text-decoration-none text-dark">
+                  Refund Policy
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div className="col-md-3 mb-3">
             <h6 className="fw-bold">My Profile</h6>
             <ul className="list-unstyled">
-              <li><Link to="/profile" className="text-decoration-none text-dark">Personal Data</Link></li>
-              <li><Link to="/profile/Orders" className="text-decoration-none text-dark">Orders</Link></li>
-              <li><Link to="/profile/wishlist" className="text-decoration-none text-dark">Wishlist</Link></li>
+              <li>
+                <Link to="/profile" className="text-decoration-none text-dark">
+                  Personal Data
+                </Link>
+              </li>
+              <li>
+                <Link to="/profile/orders" className="text-decoration-none text-dark">
+                  Orders
+                </Link>
+              </li>
+              <li>
+                <Link to="/profile/wishlist" className="text-decoration-none text-dark">
+                  Wishlist
+                </Link>
+              </li>
             </ul>
           </div>
 
           <div className="col-md-3 mb-3">
             <h6 className="fw-bold">FAQ</h6>
             <ul className="list-unstyled">
-              <li><Link to="/faq" className="text-decoration-none text-dark">Shipping Info</Link></li>
-              <li><Link to="/faq" className="text-decoration-none text-dark">Returns</Link></li>
-              <li><Link to="/faq" className="text-decoration-none text-dark">Payment Methods</Link></li>
+              <li>
+                <Link to="/shipping-info" className="text-decoration-none text-dark">
+                  Shipping Info
+                </Link>
+              </li>
+              <li>
+                <Link to="/returns" className="text-decoration-none text-dark">
+                  Returns
+                </Link>
+              </li>
+              <li>
+                <Link to="/payment-methods" className="text-decoration-none text-dark">
+                  Payment Methods
+                </Link>
+              </li>
             </ul>
           </div>
 

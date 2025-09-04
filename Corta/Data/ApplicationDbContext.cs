@@ -21,6 +21,7 @@ namespace Corta.Data
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<Wishlist> Wishlists { get; set; }
 
 
 
@@ -73,6 +74,16 @@ namespace Corta.Data
              .WithMany(u => u.Reviews)
              .HasForeignKey(r => r.UserId)
              .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PurchaseItem>()
+        .HasOne(pi => pi.Product)
+        .WithMany(p => p.PurchaseItems)
+        .HasForeignKey(pi => pi.ProductId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+         modelBuilder.Entity<Wishlist>()
+            .HasIndex(w => new { w.UserId, w.ProductId })
+            .IsUnique();
 
         }
     }

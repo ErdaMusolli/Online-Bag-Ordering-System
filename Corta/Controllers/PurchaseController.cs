@@ -3,6 +3,8 @@ using Corta.DTOs;
 using Corta.Services;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using System;
 
 namespace Corta.Controllers
 {
@@ -11,10 +13,12 @@ namespace Corta.Controllers
     public class PurchaseController : ControllerBase
     {
         private readonly PurchaseService _purchaseService;
+        private readonly ProductService _productService; 
 
-        public PurchaseController(PurchaseService purchaseService)
+        public PurchaseController(PurchaseService purchaseService, ProductService productService)
         {
             _purchaseService = purchaseService;
+            _productService = productService;
         }
 
         [HttpGet]
@@ -24,12 +28,31 @@ namespace Corta.Controllers
             return Ok(purchases);
         }
 
+        [HttpGet("my")]
+        [Authorize]
+        public async Task<IActionResult> GetMyPurchases()
+        {
+            try
+            {
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "UserId");
+                if (userIdClaim == null)
+                    return Unauthorized(new { error = "User not authorized" });
+
+                int userId = int.Parse(userIdClaim.Value);
+                var purchases = await _purchaseService.GetAllDtoAsync(userId);
+                return Ok(purchases);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var purchase = await _purchaseService.GetByIdAsync(id);
-            if (purchase == null)
-                return NotFound();
+            if (purchase == null) return NotFound();
 
             var dto = new PurchaseDto
             {
@@ -39,7 +62,7 @@ namespace Corta.Controllers
                 Status = purchase.Status,
                 PurchaseItems = purchase.PurchaseItems.Select(pi => new PurchaseItemDto
                 {
-                    ProductId = 0, 
+                    ProductId = pi.ProductId,
                     ProductName = pi.ProductName,
                     Quantity = pi.Quantity,
                     Price = pi.Price,
@@ -56,13 +79,18 @@ namespace Corta.Controllers
             try
             {
                 var purchase = await _purchaseService.CreateAsync(dto);
-                return Ok(purchase);
-            }
+                foreach (var item in purchase.PurchaseItems)
+        {
+            await _productService.IncreasePurchaseCountAsync(item.ProductId, item.Quantity);
+        }
+
+        return Ok(purchase);
+    }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { error = ex.Message });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new { error = ex.Message });
             }
@@ -76,6 +104,31 @@ namespace Corta.Controllers
             return Ok("Purchase updated");
         }
 
+[HttpPut("{id}/status")]
+public async Task<IActionResult> UpdateStatus(int id, [FromBody] string newStatus)
+{
+    var purchase = await _purchaseService.GetByIdAsync(id);
+    if (purchase == null) return NotFound();
+
+    purchase.Status = newStatus;
+    await _purchaseService.UpdateAsync(id, new PurchaseDto
+    {
+        UserId = purchase.UserId,
+        TotalAmount = purchase.TotalAmount,
+        Status = newStatus,
+        PurchaseItems = purchase.PurchaseItems.Select(pi => new PurchaseItemDto
+        {
+            ProductId = pi.ProductId,
+            ProductName = pi.ProductName,
+            Quantity = pi.Quantity,
+            Price = pi.Price,
+            ProductImageUrl = pi.ProductImageUrl
+        }).ToList()
+    });
+
+    return Ok(new { message = "Status updated" });
+}
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -85,9 +138,3 @@ namespace Corta.Controllers
         }
     }
 }
-
-
-
-
-
-

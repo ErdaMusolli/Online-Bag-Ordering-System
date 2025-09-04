@@ -21,12 +21,9 @@ namespace Corta.Services
                     .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
-            if (cart == null)
-            {
-                return new CartDto();
-            }
+            if (cart == null) return new CartDto();
 
-            var cartDto = new CartDto
+            return new CartDto
             {
                 Items = cart.Items.Select(i => new CartItemDto
                 {
@@ -34,11 +31,9 @@ namespace Corta.Services
                     ProductName = i.Product?.Name,
                     Price = i.Product?.Price,
                     ImageUrl = i.Product?.ImageUrl,
-                    Quantity = i.Quantity
+                    Quantity = i.Quantity,
                 }).ToList()
             };
-
-            return cartDto;
         }
 
         public async Task AddOrUpdateItemAsync(int userId, int productId, int quantity)
@@ -57,20 +52,8 @@ namespace Corta.Services
             }
 
             var cartItem = cart.Items.FirstOrDefault(i => i.ProductId == productId);
-            if (cartItem != null)
-            {
-                cartItem.Quantity += quantity;
-            }
-            else
-            {
-                cartItem = new CartItem
-                {
-                    CartId = cart.Id,
-                    ProductId = productId,
-                    Quantity = quantity
-                };
-                cart.Items.Add(cartItem);
-            }
+            if (cartItem != null) cartItem.Quantity += quantity;
+            else cart.Items.Add(new CartItem { CartId = cart.Id, ProductId = productId, Quantity = quantity });
 
             await _context.SaveChangesAsync();
         }
@@ -104,43 +87,54 @@ namespace Corta.Services
                 await _context.SaveChangesAsync();
             }
         }
+
         public async Task<bool> PurchaseCartAsync(int userId)
-{
-    var cart = await _context.Carts
-        .Include(c => c.Items)
-        .ThenInclude(i => i.Product)
-        .FirstOrDefaultAsync(c => c.UserId == userId);
-
-    if (cart == null || !cart.Items.Any())
-        return false; 
-    var purchase = new Purchase
-    {
-        UserId = userId,
-        CreatedAt = DateTime.UtcNow,
-        TotalAmount = 0m,
-        PurchaseItems = new List<PurchaseItem>()
-    };
-
-    foreach (var cartItem in cart.Items)
-    {
-        var purchaseItem = new PurchaseItem
         {
-            ProductName = cartItem.Product?.Name ?? "Unknown",
-            Quantity = cartItem.Quantity,
-            Price = cartItem.Product?.Price ?? 0m
-        };
-        purchase.PurchaseItems.Add(purchaseItem);
+            var cart = await _context.Carts
+                .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
 
-        purchase.TotalAmount += purchaseItem.Price * purchaseItem.Quantity;
-    }
+            if (cart == null || !cart.Items.Any())
+                return false;
 
-    _context.Purchases.Add(purchase);
-    _context.CartItems.RemoveRange(cart.Items);
+            foreach (var cartItem in cart.Items)
+            {
+                var product = cartItem.Product;
+                if (product == null || product.Stock < cartItem.Quantity)
+                    return false;
+            }
 
-    await _context.SaveChangesAsync();
+            var purchase = new Purchase
+            {
+                UserId = userId,
+                CreatedAt = DateTime.UtcNow,
+                TotalAmount = 0m,
+                PurchaseItems = new List<PurchaseItem>()
+            };
 
-    return true;
-}
+            foreach (var cartItem in cart.Items)
+            {
+                var product = cartItem.Product!;
+                product.Stock -= cartItem.Quantity;
+                product.PurchaseCount += cartItem.Quantity;
 
+                var purchaseItem = new PurchaseItem
+                {
+                    ProductName = product.Name,
+                    Quantity = cartItem.Quantity,
+                    Price = product.Price,
+                    ProductId = product.Id
+                };
+                purchase.PurchaseItems.Add(purchaseItem);
+                purchase.TotalAmount += purchaseItem.Price * purchaseItem.Quantity;
+            }
+
+            _context.Purchases.Add(purchase);
+            _context.CartItems.RemoveRange(cart.Items);
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

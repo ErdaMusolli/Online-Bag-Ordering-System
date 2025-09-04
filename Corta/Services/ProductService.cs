@@ -33,12 +33,11 @@ namespace Corta.Services
                 Name = product.Name,
                 Description = product.Description ?? "",
                 Price = product.Price,
+                OldPrice = product.OldPrice,
                 Stock = product.Stock,
                 ImageUrl = product.ImageUrl,
                 Size = product.Size,
-                IsNewArrival = product.IsNewArrival,
-                IsBestseller = product.IsBestseller,
-                IsSpecialOffer = product.IsSpecialOffer,
+                PurchaseCount = product.PurchaseCount,
                 ProductImages = product.ProductImages
                     .Select(pi => new ProductImageDto
                     {
@@ -57,12 +56,12 @@ namespace Corta.Services
                 Name = dto.Name,
                 Description = dto.Description,
                 Price = dto.Price,
+                OldPrice = dto.OldPrice,
                 Stock = dto.Stock,
                 ImageUrl = dto.ImageUrl,
                 Size = dto.Size,
-                IsNewArrival = dto.IsNewArrival,
-                IsBestseller = dto.IsBestseller,
-                IsSpecialOffer = dto.IsSpecialOffer
+                CreatedAt = DateTime.UtcNow,
+                PurchaseCount = dto.PurchaseCount
             };
 
             if (dto.ProductImages != null)
@@ -80,61 +79,70 @@ namespace Corta.Services
             await _context.SaveChangesAsync();
             return product;
         }
-
-      public async Task<ProductDto?> UpdateAsync(int id, ProductDto dto)
-{
-    var product = await _context.Products
-        .Include(p => p.ProductImages)
-        .FirstOrDefaultAsync(p => p.Id == id);
-
-    if (product == null) return null;
-
-    product.Name = dto.Name;
-    product.Description = dto.Description;
-    product.Price = dto.Price;
-    product.Stock = dto.Stock;
-    product.ImageUrl = dto.ImageUrl;
-    product.Size = dto.Size;
-    product.IsNewArrival = dto.IsNewArrival;
-    product.IsBestseller = dto.IsBestseller;
-    product.IsSpecialOffer = dto.IsSpecialOffer;
-
-    if (dto.ProductImages != null && dto.ProductImages.Any())
-{
-    foreach (var img in dto.ProductImages)
-    {
-        if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
+        public async Task<ProductDto?> UpdateAsync(int id, ProductDto dto)
         {
-            product.ProductImages.Add(new ProductImage
-            {
-                ImageUrl = img.ImageUrl
-            });
-        }
-    }
-}
-    await _context.SaveChangesAsync();
+            var product = await _context.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-    return new ProductDto
+            if (product == null) return null;
+
+            product.Name = dto.Name;
+            product.Description = dto.Description;
+             if (dto.OldPrice.HasValue && dto.OldPrice.Value > 0)
     {
-        Id = product.Id,
-        Name = product.Name,
-        Description = product.Description,
-        Price = product.Price,
-        Stock = product.Stock,
-        ImageUrl = product.ImageUrl,
-        Size = product.Size,
-        IsNewArrival = product.IsNewArrival,
-        IsBestseller = product.IsBestseller,
-        IsSpecialOffer = product.IsSpecialOffer,
-        ProductImages = product.ProductImages
-            .Select(pi => new ProductImageDto
+        product.OldPrice = dto.OldPrice;
+
+        product.Price = dto.Price;
+    }
+    else
+    {
+        product.OldPrice = null;
+        product.Price = dto.Price;
+    }
+
+            product.Stock = dto.Stock;
+            product.ImageUrl = dto.ImageUrl;
+            product.Size = dto.Size;
+            product.PurchaseCount = dto.PurchaseCount;
+
+            if (dto.ProductImages != null && dto.ProductImages.Any())
             {
-                Id = pi.Id,
-                ProductId = pi.ProductId,
-                ImageUrl = pi.ImageUrl
-            }).ToList()
-    };
-}
+                foreach (var img in dto.ProductImages)
+                {
+                    if (!product.ProductImages.Any(pi => pi.ImageUrl == img.ImageUrl))
+                    {
+                        product.ProductImages.Add(new ProductImage
+                        {
+                            ImageUrl = img.ImageUrl
+                        });
+                    }
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                OldPrice = product.OldPrice,
+                Stock = product.Stock,
+                ImageUrl = product.ImageUrl,
+                Size = product.Size,
+                PurchaseCount = product.PurchaseCount,
+                ProductImages = product.ProductImages
+                    .Select(pi => new ProductImageDto
+                    {
+                        Id = pi.Id,
+                        ProductId = pi.ProductId,
+                        ImageUrl = pi.ImageUrl
+                    }).ToList()
+            };
+        }
+
         public async Task<bool> DeleteAsync(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -144,5 +152,24 @@ namespace Corta.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<bool> DecreaseStockAsync(int productId, int quantity)
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null || product.Stock < quantity) return false;
+
+            product.Stock -= quantity;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<bool> IncreasePurchaseCountAsync(int productId, int quantity)
+{
+    var product = await _context.Products.FindAsync(productId);
+    if (product == null) return false;
+
+    product.PurchaseCount += quantity;
+    await _context.SaveChangesAsync();
+    return true;
+}
     }
 }

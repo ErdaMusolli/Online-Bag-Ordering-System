@@ -65,7 +65,7 @@ const NewsList = () => {
             description: item.content,
             author: item.author,
             date: item.datePublished,
-            image: item.imageUrl,
+            image: item.imageUrl ? `http://localhost:5197${item.imageUrl}` : '', // <-- ndryshimi
             link: `/news/${item.id}`,
           }));
 
@@ -101,7 +101,7 @@ const NewsList = () => {
 
   return (
     <div className="w-100 px-4 mt-5 pt-5">
-
+ 
       <div className="position-relative mb-5" style={{ height: '400px' }}>
         {newsItems.map((item, index) => (
           <div
@@ -114,7 +114,7 @@ const NewsList = () => {
             }}
           >
             <img
-              src={item.image}
+              src={item.image || '/placeholder.jpg'} 
               alt={item.title}
               style={{
                 width: '100%',
@@ -135,12 +135,13 @@ const NewsList = () => {
         ))}
       </div>
 
+
       <div className="row justify-content-center text-center">
         {newsItems.map((item) => (
           <div key={item.id} className="col-md-4 mb-4">
             <a href={item.link}>
               <img
-                src={item.image}
+                src={item.image || '/placeholder.jpg'} 
                 alt={item.title}
                 className="img-fluid rounded border"
                 style={{ width: '100%', height: '350px', objectFit: 'cover' }}
@@ -156,6 +157,7 @@ const NewsList = () => {
 };
 
 export default NewsList;
+
 
 
 

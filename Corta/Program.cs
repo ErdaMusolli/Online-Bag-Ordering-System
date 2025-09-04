@@ -43,6 +43,8 @@ builder.Services.AddScoped<NewsService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<ReviewService>();
 builder.Services.AddScoped<CartService>();
+builder.Services.AddScoped<WishlistService>();
+
 
 
 

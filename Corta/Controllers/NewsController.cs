@@ -31,16 +31,43 @@ namespace Corta.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] NewsDto dto)
+        public async Task<IActionResult> Create([FromForm] NewsDto dto, IFormFile? image)
         {
+            if (image != null && image.Length > 0)
+            {
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                Directory.CreateDirectory(uploadsPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                dto.ImageUrl = $"/images/{fileName}";
+            }
 
             var news = await _newsService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = news.Id }, news);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] NewsDto dto)
+        public async Task<IActionResult> Update(int id, [FromForm] NewsDto dto, IFormFile? image)
         {
+            if (image != null && image.Length > 0)
+            {
+                var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                Directory.CreateDirectory(uploadsPath);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+                var filePath = Path.Combine(uploadsPath, fileName);
+
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await image.CopyToAsync(stream);
+
+                dto.ImageUrl = $"/images/{fileName}";
+            }
+
             var updated = await _newsService.UpdateAsync(id, dto);
             return updated ? NoContent() : NotFound();
         }
@@ -53,5 +80,3 @@ namespace Corta.Controllers
         }
     }
 }
-
-
