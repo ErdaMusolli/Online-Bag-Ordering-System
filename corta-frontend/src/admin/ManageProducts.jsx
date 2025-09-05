@@ -1,54 +1,118 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../services/authFetch';
-import { getNewAccessToken } from '../services/tokenUtils';
+import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { authFetch } from "../services/authFetch";
+import { getNewAccessToken } from "../services/tokenUtils";
 
-const ManageProducts = () => {
+const ASSET_HOST = "http://localhost:5197";
+const MATERIALS = ["", "corduroy", "denim", "linen", "canvas", "bamboo"];
+
+function normalizeProduct(p) {
+  const mainImage = p.imageUrl
+    ? (p.imageUrl.startsWith("/") ? p.imageUrl : `/images/${p.imageUrl}`)
+    : null;
+
+  const rawImgs =
+    (p.ProductImages && (Array.isArray(p.ProductImages.$values) ? p.ProductImages.$values : p.ProductImages)) ||
+    (p.productImages && (Array.isArray(p.productImages.$values) ? p.productImages.$values : p.productImages)) ||
+    [];
+
+  const productImages = rawImgs.map((img) => {
+    const url = img.imageUrl || img.url || img.path || "";
+    return { ...img, imageUrl: url.startsWith("/") ? url : `/${url}` };
+  });
+
+  const category = p.category || p.Category || null;
+  const categoryId = p.categoryId ?? p.CategoryId ?? category?.id ?? null;
+  const material = p.material ?? p.Material ?? "";
+
+  return { ...p, imageUrl: mainImage, productImages, category, categoryId, material };
+}
+
+export default function ManageProducts() {
   const navigate = useNavigate();
+
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   const [editingProduct, setEditingProduct] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', oldPrice:null, description: '', stock: '', image: null, additionalImages: [], existingImages: [] });
-  const [newProduct, setNewProduct] = useState({ name: '', price: '', oldPrice:null, description: '', stock: '', image: null, additionalImages: [] });
-  const [searchTerm, setSearchTerm] = useState('');
+  const [editForm, setEditForm] = useState({
+    name: "",
+    price: "",
+    oldPrice: null,
+    description: "",
+    stock: "",
+    categoryId: "",
+    material: "",
+    image: null,
+    additionalImages: [],
+    existingImages: [],
+    existingMainImage: "",
+  });
+
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    price: "",
+    oldPrice: null,
+    description: "",
+    stock: "",
+    categoryId: "",
+    material: "",
+    image: null,
+    additionalImages: [],
+  });
+
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const token = localStorage.getItem('token') || await getNewAccessToken();
-      if (!token) return navigate('/login');
+    (async () => {
       try {
-        const res = await authFetch('http://localhost:5197/api/products');
-        if (!res.ok) throw new Error('Failed to fetch products');
-        const data = await res.json();
-        const productsArray = (Array.isArray(data) ? data : (Array.isArray(data.$values) ? data.$values : []))
-          .map(p => {
-            const mainImage = p.imageUrl ? (p.imageUrl.startsWith('/') ? p.imageUrl : `/images/${p.imageUrl}`) : null;
-            const productImagesRaw = Array.isArray(p.ProductImages?.$values) ? p.ProductImages.$values : (p.ProductImages || []);
-            const productImages = productImagesRaw.map(img => {
-              const imgUrl = img.imageUrl || img.url || img.path || '';
-              return { ...img, imageUrl: imgUrl.startsWith('/') ? imgUrl : `/images/${imgUrl}` };
-            });
-            return { ...p, imageUrl: mainImage, productImages };
-          });
-        setProducts(productsArray);
-      } catch (error) {
-        console.error('Error fetching products:', error);
+        const res = await fetch(`${ASSET_HOST}/api/categories`);
+        const raw = await res.json();
+        const arr = Array.isArray(raw) ? raw : raw.$values || [];
+        setCategories(arr);
+      } catch (e) {
+        console.error("Failed to load categories", e);
+        setCategories([]);
       }
-    };
-    fetchProducts();
+    })();
+  }, []);
+
+  const loadProducts = useCallback(async () => {
+    const token = localStorage.getItem("token") || (await getNewAccessToken());
+    if (!token) return navigate("/login");
+
+    try {
+      const res = await authFetch(`${ASSET_HOST}/api/products`);
+      if (!res.ok) throw new Error("Failed to fetch products");
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.$values || [];
+      setProducts(list.map(normalizeProduct));
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setProducts([]);
+    }
   }, [navigate]);
 
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
+
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this product?')) return;
-    const token = localStorage.getItem('token') || await getNewAccessToken();
-    if (!token) return navigate('/login');
+    if (!window.confirm("Delete this product?")) return;
+    const token = localStorage.getItem("token") || (await getNewAccessToken());
+    if (!token) return navigate("/login");
+
     try {
-      const res = await fetch(`http://localhost:5197/api/products/${id}`, {
-        method: 'DELETE',
+      const res = await fetch(`${ASSET_HOST}/api/products/${id}`, {
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setProducts(products.filter(p => p.id !== id));
-      else alert('Delete failed');
+      if (res.ok) {
+        await loadProducts();
+      } else {
+        alert("Delete failed");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -57,181 +121,323 @@ const ManageProducts = () => {
   const openEditModal = (product) => {
     setEditingProduct(product);
     setEditForm({
-      ...product,
+      name: product.name || "",
+      price: product.price ?? "",
+      oldPrice: product.oldPrice ?? null,
+      description: product.description || "",
+      stock: product.stock ?? "",
+      categoryId: product.categoryId ?? product.category?.id ?? "",
+      material: product.material ?? "",
       image: null,
-      existingMainImage: product.imageUrl,
       additionalImages: [],
       existingImages: product.productImages || [],
-      oldPrice: product.oldPrice ?? null
+      existingMainImage: product.imageUrl || "",
     });
   };
 
   const handleUpdate = async () => {
-    const token = localStorage.getItem('token') || await getNewAccessToken();
-    if (!token) return navigate('/login');
+    const token = localStorage.getItem("token") || (await getNewAccessToken());
+    if (!token) return navigate("/login");
 
     const formData = new FormData();
-    formData.append('price', editForm.price);
-    if(editForm.oldPrice !== null && editForm.oldPrice !== undefined) formData.append('oldPrice', editForm.oldPrice);
-    formData.append('name', editForm.name);
-    formData.append('description', editForm.description);
-    formData.append('stock', editForm.stock);
+    formData.append("price", editForm.price);
+    if (editForm.oldPrice !== null && editForm.oldPrice !== undefined) formData.append("oldPrice", editForm.oldPrice);
+    formData.append("name", editForm.name);
+    formData.append("description", editForm.description);
+    formData.append("stock", editForm.stock);
+    formData.append("categoryId", editForm.categoryId); 
+    formData.append("material", editForm.material || ""); 
 
-    if(editForm.image) formData.append('image', editForm.image);
-    else if(editForm.existingMainImage) formData.append('existingMainImageUrl', editForm.existingMainImage);
+    if (editForm.image) formData.append("image", editForm.image);
+    else if (editForm.existingMainImage) formData.append("existingMainImageUrl", editForm.existingMainImage);
 
-    editForm.additionalImages.forEach(file => formData.append('additionalImages', file));
-    editForm.existingImages.forEach(img => formData.append('existingImageUrls', img.imageUrl));
+    editForm.additionalImages.forEach((file) => formData.append("additionalImages", file));
 
-    const res = await fetch(`http://localhost:5197/api/products/${editingProduct.id}`, {
-      method: 'PUT',
+    const res = await fetch(`${ASSET_HOST}/api/products/${editingProduct.id}`, {
+      method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
-      body: formData
+      body: formData,
     });
 
     if (res.ok) {
-      const updatedProduct = await res.json();
-      setProducts(products.map(p => p.id === editingProduct.id ? {
-        ...updatedProduct,
-        imageUrl: editForm.image ? `/images/${updatedProduct.imageUrl}` : editForm.existingMainImage,
-        productImages: (updatedProduct.ProductImages || []).map(img => ({
-          ...img,
-          imageUrl: img.imageUrl.startsWith('/') ? img.imageUrl : `/${img.imageUrl}`
-        }))
-      } : p));
+      await loadProducts();
       setEditingProduct(null);
-    } else alert('Update failed');
+    } else {
+      alert("Update failed");
+    }
   };
 
   const handleAdd = async () => {
-    const token = localStorage.getItem('token') || await getNewAccessToken();
-    if (!token) return navigate('/login');
+    const token = localStorage.getItem("token") || (await getNewAccessToken());
+    if (!token) return navigate("/login");
 
     const formData = new FormData();
-    formData.append('price', newProduct.price);
-    if(newProduct.oldPrice !== null && newProduct.oldPrice !== undefined) formData.append('oldPrice', newProduct.oldPrice);
-    formData.append('name', newProduct.name);
-    formData.append('description', newProduct.description);
-    formData.append('stock', newProduct.stock);
+    formData.append("price", newProduct.price);
+    if (newProduct.oldPrice !== null && newProduct.oldPrice !== undefined) formData.append("oldPrice", newProduct.oldPrice);
+    formData.append("name", newProduct.name);
+    formData.append("description", newProduct.description);
+    formData.append("stock", newProduct.stock);
+    formData.append("categoryId", newProduct.categoryId); 
+    formData.append("material", newProduct.material || ""); 
 
-    if(newProduct.image) formData.append('image', newProduct.image);
-    newProduct.additionalImages.forEach(file => formData.append('productImages', file));
+    if (newProduct.image) formData.append("image", newProduct.image);
+    newProduct.additionalImages.forEach((file) => formData.append("additionalImages", file)); 
 
-    const res = await fetch('http://localhost:5197/api/products', {
-      method: 'POST',
+    const res = await fetch(`${ASSET_HOST}/api/products`, {
+      method: "POST",
       headers: { Authorization: `Bearer ${token}` },
-      body: formData
+      body: formData,
     });
 
     if (res.ok) {
-      const addedProduct = await res.json();
-      setProducts([...products, {
-        ...addedProduct,
-        productImages: (addedProduct.ProductImages || []).map(img => ({
-          ...img,
-          imageUrl: img.imageUrl.startsWith('/') ? img.imageUrl : `/${img.imageUrl}`
-        }))
-      }]);
+      await loadProducts();
       setShowAddModal(false);
-    } else alert('Adding product failed');
+      setNewProduct({
+        name: "",
+        price: "",
+        oldPrice: null,
+        description: "",
+        stock: "",
+        categoryId: "",
+        material: "",
+        image: null,
+        additionalImages: [],
+      });
+    } else {
+      alert("Adding product failed");
+    }
   };
 
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter((p) =>
+    (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    return (
+  return (
     <div className="container-fluid manage-products-container">
-  <div className="d-flex flex-column flex-md-row align-items-center mb-3 gap-2">
-    <button className="btn btn-outline-secondary mb-2 mb-md-0" onClick={() => navigate('/admin')}>
-      ← Back
-    </button>
-    <h2 className="text-center flex-grow-1 m-0 mt-3 mt-md-0">
-      Manage Products
-    </h2>
-    <button className="btn btn-outline-primary mt-2 mt-md-0" onClick={() => { 
-        setNewProduct({ name:'', price:'', oldPrice:null, description:'', stock:'', image:null, additionalImages:[] }); 
-        setShowAddModal(true); 
-    }}>
-      ➕ Add Product
-    </button>
-  </div>
+      <div className="d-flex flex-column flex-md-row align-items-center mb-3 gap-2">
+        <button className="btn btn-outline-secondary mb-2 mb-md-0" onClick={() => navigate("/admin")}>
+          ← Back
+        </button>
+        <h2 className="text-center flex-grow-1 m-0 mt-3 mt-md-0">Manage Products</h2>
+        <button
+          className="btn btn-outline-primary mt-2 mt-md-0"
+          onClick={() => {
+            setNewProduct({
+              name: "",
+              price: "",
+              oldPrice: null,
+              description: "",
+              stock: "",
+              categoryId: "",
+              material: "",
+              image: null,
+              additionalImages: [],
+            });
+            setShowAddModal(true);
+          }}
+        >
+          ➕ Add Product
+        </button>
+      </div>
 
-      <input type="text" placeholder="Search..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="form-control mb-3" />
+      <input
+        type="text"
+        placeholder="Search..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="form-control mb-3"
+      />
 
       <div className="table-responsive">
-    <table className="table table-hover ">
-      <thead className="table-light">
-        <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th className="d-none d-sm-table-cell">Description</th>
-          <th>Price</th>
-          <th>Stock</th>
-          <th className="d-none d-sm-table-cell">Main Image</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {filteredProducts.length ? filteredProducts.map((p,i)=>(
-          <tr key={p.id} style={{ border: p.stock<=0?'2px solid red':'none', backgroundColor: p.stock<=0?'#fff5f5':'transparent' }}>
-            <td>{i+1}</td>
-            <td>{p.name}</td>
-            <td className="d-none d-sm-table-cell">{p.description}</td>
-            <td>
-              {p.oldPrice && p.oldPrice>p.price && (
-                <span style={{ textDecoration:'line-through', color:'#dc3545', marginRight:'5px' }}>${p.oldPrice.toFixed(2)}</span>
-              )}
-              <span style={{ fontWeight:'bold', color:'#007bff' }}>${p.price.toFixed(2)}</span>
-            </td>
-            <td>{p.stock}</td>
-            <td className="d-none d-sm-table-cell">
-              {p.imageUrl && <img src={`http://localhost:5197${p.imageUrl}`} width="50" alt={p.name} className="me-2"/>}
-              {p.productImages && p.productImages.length > 0 && <img src={`http://localhost:5197${p.productImages[0].imageUrl}`} width="50" alt={`${p.name}-second`} />}
-            </td>
-            <td className="d-flex gap-1 flex-wrap">
-              <button className="btn btn-sm btn-outline-primary" onClick={()=>openEditModal(p)}>Edit</button>
-              <button className="btn btn-sm btn-outline-danger" onClick={()=>handleDelete(p.id)}>Delete</button>
-            </td>
-          </tr>
-        )) : <tr><td colSpan="7" className="text-center">No products found</td></tr>}
-      </tbody>
-    </table>
-  </div>
+        <table className="table table-hover">
+          <thead className="table-light">
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th className="d-none d-sm-table-cell">Description</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th className="d-none d-md-table-cell">Category</th>
+              <th className="d-none d-md-table-cell">Fabric</th>
+              <th className="d-none d-sm-table-cell">Main Image</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.length ? (
+              filteredProducts.map((p, i) => (
+                <tr
+                  key={p.id}
+                  style={{
+                    border: p.stock <= 0 ? "2px solid red" : "none",
+                    backgroundColor: p.stock <= 0 ? "#fff5f5" : "transparent",
+                  }}
+                >
+                  <td>{i + 1}</td>
+                  <td>{p.name}</td>
+                  <td className="d-none d-sm-table-cell">{p.description}</td>
+                  <td>
+                    {p.oldPrice && p.oldPrice > p.price && (
+                      <span
+                        style={{
+                          textDecoration: "line-through",
+                          color: "#dc3545",
+                          marginRight: "5px",
+                        }}
+                      >
+                        €{Number(p.oldPrice).toFixed(2)}
+                      </span>
+                    )}
+                    <span style={{ fontWeight: "bold", color: "#007bff" }}>
+                      €{Number(p.price).toFixed(2)}
+                    </span>
+                  </td>
+                  <td>{p.stock}</td>
+                  <td className="d-none d-md-table-cell">
+                    {categories.find((c) => c.id === (p.categoryId ?? p.category?.id))?.name ||
+                      p.category?.name ||
+                      "-"}
+                  </td>
+                  <td className="d-none d-md-table-cell text-capitalize">{p.material || "-"}</td>
+                  <td className="d-none d-sm-table-cell">
+                    {p.imageUrl && (
+                      <img
+                        src={`${ASSET_HOST}${p.imageUrl}`}
+                        width="50"
+                        alt={p.name}
+                        className="me-2"
+                      />
+                    )}
+                    {p.productImages && p.productImages.length > 0 && (
+                      <img
+                        src={`${ASSET_HOST}${p.productImages[0].imageUrl}`}
+                        width="50"
+                        alt={`${p.name}-second`}
+                      />
+                    )}
+                  </td>
+                  <td className="d-flex gap-1 flex-wrap">
+                    <button className="btn btn-sm btn-outline-primary" onClick={() => openEditModal(p)}>
+                      Edit
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(p.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="9" className="text-center">
+                  No products found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {editingProduct && (
         <div className="modal d-block" tabIndex="-1">
-      <div className="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-        <div className="modal-content">
-          <div className="modal-header"><h5>Edit Product</h5><button className="btn-close" onClick={()=>setEditingProduct(null)}></button></div>
-          <div className="modal-body">
-                {['name','price','oldPrice','description','stock'].map(f => (
+          <div className="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>Edit Product</h5>
+                <button className="btn-close" onClick={() => setEditingProduct(null)}></button>
+              </div>
+              <div className="modal-body">
+                {["name", "price", "oldPrice", "description", "stock"].map((f) => (
                   <div key={f} className="mb-3">
-                    <label>
-                      {f === 'price' ? 'Price' : f === 'oldPrice' ? 'Old Price' : f.charAt(0).toUpperCase() + f.slice(1)}
-                    </label>
+                    <label>{f === "price" ? "Price" : f === "oldPrice" ? "Old Price" : f.charAt(0).toUpperCase() + f.slice(1)}</label>
                     <input
-                      type={f === 'price' || f === 'stock' || f === 'oldPrice' ? 'number' : 'text'}
+                      type={f === "price" || f === "stock" || f === "oldPrice" ? "number" : "text"}
                       className="form-control"
-                      value={f === 'price' ? editForm.price : f === 'oldPrice' ? (editForm.oldPrice ?? '') : editForm[f]}
-                      onChange={e => setEditForm({...editForm, [f]: f==='oldPrice' && !e.target.value ? null : e.target.value})}
-                      required={f === 'price' || f === 'name'}
+                      value={f === "price" ? editForm.price : f === "oldPrice" ? editForm.oldPrice ?? "" : editForm[f]}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm,
+                          [f]: f === "oldPrice" && !e.target.value ? null : e.target.value,
+                        })
+                      }
+                      required={f === "price" || f === "name"}
                     />
                   </div>
                 ))}
+
+                <div className="mb-3">
+                  <label>Category</label>
+                  <select
+                    className="form-control"
+                    value={editForm.categoryId || ""}
+                    onChange={(e) => setEditForm({ ...editForm, categoryId: Number(e.target.value) })}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select category
+                    </option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-3">
+                  <label>Fabric</label>
+                  <select
+                    className="form-control"
+                    value={editForm.material || ""}
+                    onChange={(e) => setEditForm({ ...editForm, material: e.target.value })}
+                  >
+                    {MATERIALS.map((m) => (
+                      <option key={m} value={m}>
+                        {m || "— none —"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="mb-3">
                   <label>Main Image</label>
-                  <input type="file" className="form-control" onChange={e=>setEditForm({...editForm,image:e.target.files[0]})}/>
+                  <input
+                    type="file"
+                    className="form-control"
+                    onChange={(e) => setEditForm({ ...editForm, image: e.target.files[0] })}
+                  />
                 </div>
+
                 <div className="mb-3">
                   <label>Additional Images</label>
-                  <div className="d-flex mb-2">
-                    {editForm.existingImages.map((img,idx)=><img key={idx} src={`http://localhost:5197${img.imageUrl}`} width="50" alt={`existing-${idx}`} className="me-2"/>)}
+                  <div className="d-flex mb-2 flex-wrap">
+                    {editForm.existingImages.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={`${ASSET_HOST}${img.imageUrl}`}
+                        width="50"
+                        alt={`existing-${idx}`}
+                        className="me-2 mb-2"
+                      />
+                    ))}
                   </div>
-                  <input type="file" className="form-control" multiple onChange={e=>setEditForm({...editForm,additionalImages:Array.from(e.target.files)})}/>
+                  <input
+                    type="file"
+                    className="form-control"
+                    multiple
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, additionalImages: Array.from(e.target.files) })
+                    }
+                  />
                 </div>
               </div>
+
               <div className="modal-footer d-flex flex-column flex-sm-row gap-2">
-                <button className="btn btn-secondary" onClick={()=>setEditingProduct(null)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleUpdate}>Save</button>
+                <button className="btn btn-secondary" onClick={() => setEditingProduct(null)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleUpdate}>
+                  Save
+                </button>
               </div>
             </div>
           </div>
@@ -240,42 +446,100 @@ const ManageProducts = () => {
 
       {showAddModal && (
         <div className="modal d-block" tabIndex="-1">
-      <div className="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-        <div className="modal-content">
-          <div className="modal-header"><h5>Add Product</h5><button className="btn-close" onClick={()=>setShowAddModal(false)}></button></div>
-          <div className="modal-body">
-                {['name','price','oldPrice','description','stock'].map(f=>(
+          <div className="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5>Add Product</h5>
+                <button className="btn-close" onClick={() => setShowAddModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                {["name", "price", "oldPrice", "description", "stock"].map((f) => (
                   <div key={f} className="mb-3">
-                    <label>{f==='price'?'Price': f==='oldPrice'?'Old Price': f.charAt(0).toUpperCase()+f.slice(1)}</label>
+                    <label>{f === "price" ? "Price" : f === "oldPrice" ? "Old Price" : f.charAt(0).toUpperCase() + f.slice(1)}</label>
                     <input
-                      type={f==='price'||f==='stock'||f==='oldPrice'?'number':'text'}
+                      type={f === "price" || f === "stock" || f === "oldPrice" ? "number" : "text"}
                       className="form-control"
-                      value={f==='price'? newProduct.price : f==='oldPrice'? (newProduct.oldPrice ?? '') : newProduct[f]}
-                      onChange={e=>setNewProduct({...newProduct,[f]:f==='oldPrice' && !e.target.value ? null : e.target.value})}
-                      required={f==='price' || f==='name'}
+                      value={f === "price" ? newProduct.price : f === "oldPrice" ? newProduct.oldPrice ?? "" : newProduct[f]}
+                      onChange={(e) =>
+                        setNewProduct({
+                          ...newProduct,
+                          [f]: f === "oldPrice" && !e.target.value ? null : e.target.value,
+                        })
+                      }
+                      required={f === "price" || f === "name"}
                     />
                   </div>
                 ))}
+
+                <div className="mb-3">
+                  <label>Category</label>
+                  <select
+                    className="form-control"
+                    value={newProduct.categoryId || ""}
+                    onChange={(e) => setNewProduct({ ...newProduct, categoryId: Number(e.target.value) })}
+                    required
+                  >
+                    <option value="" disabled>
+                      Select category
+                    </option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-3">
+                  <label>Fabric</label>
+                  <select
+                    className="form-control"
+                    value={newProduct.material || ""}
+                    onChange={(e) => setNewProduct({ ...newProduct, material: e.target.value })}
+                  >
+                    {MATERIALS.map((m) => (
+                      <option key={m} value={m}>
+                        {m || "— none —"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="mb-3">
                   <label>Main Image</label>
-                  <input type="file" className="form-control" onChange={e=>setNewProduct({...newProduct,image:e.target.files[0]})}/>
+                  <input
+                    type="file"
+                    className="form-control"
+                    onChange={(e) => setNewProduct({ ...newProduct, image: e.target.files[0] })}
+                  />
                 </div>
+
                 <div className="mb-3">
                   <label>Additional Images</label>
-                  <input type="file" className="form-control" multiple onChange={e=>setNewProduct({...newProduct,additionalImages:Array.from(e.target.files)})}/>
+                  <input
+                    type="file"
+                    className="form-control"
+                    multiple
+                    onChange={(e) =>
+                      setNewProduct({ ...newProduct, additionalImages: Array.from(e.target.files) })
+                    }
+                  />
                 </div>
               </div>
+
               <div className="modal-footer d-flex flex-column flex-sm-row gap-2">
-                <button className="btn btn-secondary" onClick={()=>setShowAddModal(false)}>Cancel</button>
-                <button className="btn btn-primary" onClick={handleAdd}>Add</button>
+                <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleAdd}>
+                  Add
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
     </div>
-  )
+  );
+}
 
-};
-
-export default ManageProducts;

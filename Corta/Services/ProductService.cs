@@ -14,14 +14,36 @@ namespace Corta.Services
             _context = context;
         }
 
-        public async Task<List<Product>> GetAllAsync() =>
-            await _context.Products
+         public async Task<List<Product>> GetAllAsync(string? categorySlug = null, string? material = null)
+        {
+            var q = _context.Products
+                .Include(p => p.Category)
                 .Include(p => p.ProductImages)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(categorySlug))
+            {
+                q = q.Where(p => p.Category.Slug == categorySlug);
+            }
+
+            if (!string.IsNullOrWhiteSpace(material))
+            {
+                var m = material.ToLower();
+                q = q.Where(p =>
+                    (p.Material ?? "").ToLower().Contains(m) ||
+                    (p.Name ?? "").ToLower().Contains(m) ||
+                    (p.Description ?? "").ToLower().Contains(m));
+            }
+
+            return await q.OrderByDescending(p => p.CreatedAt).ToListAsync();
+        }
+
+        public Task<List<Product>> GetAllAsync() => GetAllAsync(null, null);
 
         public async Task<ProductDto?> GetByIdAsync(int id)
         {
             var product = await _context.Products
+                .Include(p => p.Category)
                 .Include(p => p.ProductImages)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -38,6 +60,8 @@ namespace Corta.Services
                 ImageUrl = product.ImageUrl,
                 Size = product.Size,
                 PurchaseCount = product.PurchaseCount,
+                CategoryId = product.CategoryId, 
+                Material = product.Material, 
                 ProductImages = product.ProductImages
                     .Select(pi => new ProductImageDto
                     {
@@ -61,7 +85,9 @@ namespace Corta.Services
                 ImageUrl = dto.ImageUrl,
                 Size = dto.Size,
                 CreatedAt = DateTime.UtcNow,
-                PurchaseCount = dto.PurchaseCount
+                PurchaseCount = dto.PurchaseCount,
+                CategoryId = dto.CategoryId,
+                Material = dto.Material
             };
 
             if (dto.ProductImages != null)
@@ -106,6 +132,9 @@ namespace Corta.Services
             product.Size = dto.Size;
             product.PurchaseCount = dto.PurchaseCount;
 
+            product.CategoryId = dto.CategoryId;
+            product.Material = dto.Material;
+
             if (dto.ProductImages != null && dto.ProductImages.Any())
             {
                 foreach (var img in dto.ProductImages)
@@ -133,6 +162,8 @@ namespace Corta.Services
                 ImageUrl = product.ImageUrl,
                 Size = product.Size,
                 PurchaseCount = product.PurchaseCount,
+                CategoryId = product.CategoryId,    
+                Material = product.Material,
                 ProductImages = product.ProductImages
                     .Select(pi => new ProductImageDto
                     {
@@ -163,13 +194,14 @@ namespace Corta.Services
             return true;
         }
         public async Task<bool> IncreasePurchaseCountAsync(int productId, int quantity)
-{
-    var product = await _context.Products.FindAsync(productId);
-    if (product == null) return false;
+        {
+            var product = await _context.Products.FindAsync(productId);
+            if (product == null) return false;
 
-    product.PurchaseCount += quantity;
-    await _context.SaveChangesAsync();
-    return true;
-}
+            product.PurchaseCount += quantity;
+            await _context.SaveChangesAsync();
+            return true;
+    
     }
+  }
 }

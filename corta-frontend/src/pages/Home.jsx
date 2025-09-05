@@ -6,16 +6,9 @@ import Store from './Store';
 import ContactForm from '../components/ContactForm/ContactForm';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import CategoriesSection from '../components/home/CategoriesSection';
 
 const getImageUrl = (url) => url ? `http://localhost:5197${url}` : '/placeholder.jpg';
-
-const categories = [
-  { id: 1, name: 'Tote Bags', image: '/images/71d52e53-dc7c-44cf-9ae5-f80b677a93b9.jpg' },
-  { id: 2, name: 'Denim Bags', image: '/images/71d52e53-dc7c-44cf-9ae5-f80b677a93b9.jpg' },
-  { id: 3, name: 'Linen Bags', image: '/images/71d52e53-dc7c-44cf-9ae5-f80b677a93b9.jpg' },
-  { id: 4, name: 'Canvas Bags', image: '/images/71d52e53-dc7c-44cf-9ae5-f80b677a93b9.jpg' },
-  { id: 5, name: 'Bamboo Bags', image: '/images/71d52e53-dc7c-44cf-9ae5-f80b677a93b9.jpg' },
-];
 
 export default function Home() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -24,6 +17,9 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
+
+    const [categoryFilter, setCategoryFilter] = useState(null);
+    
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,25 +71,8 @@ export default function Home() {
     <div className="bg-light min-vh-100" style={{ overflowX: "hidden", width: "100%", paddingTop: "60px" }}>
       <div className="container my-5">
         <div className="row align-items-center">
-          <div className="col-lg-4 mb-4 mb-lg-0">
-            <h4 className="mb-4 text-center">Categories</h4>
-            <div className="d-flex justify-content-center flex-wrap gap-4">
-              {categories.map((category) => (
-                <div key={category.id} style={{ width: "100%", maxWidth: "120px", cursor: "pointer", textAlign: "center" }}>
-                  <div style={{
-                    width: "100%",
-                    aspectRatio: "1 / 1",
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    margin: "0 auto",
-                  }}>
-                    <img src={getImageUrl(category.image)} alt={category.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  </div>
-                  <p className="mt-2">{category.name}</p>
-                </div>
-              ))}
-            </div>
+         <div className="col-12 col-md-4 col-lg-3 mb-4">
+      <CategoriesSection />  
           </div>
           <div className="col-lg-8">
             <DiscountProducts />

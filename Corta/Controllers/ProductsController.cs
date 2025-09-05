@@ -16,10 +16,13 @@ namespace Corta.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? category, [FromQuery] string? fabric)
         {
-            var products = await _productService.GetAllAsync();
-
+            var products = await _productService.GetAllAsync(
+                 categorySlug: category,
+        material: fabric
+            );
+       
             var response = products.Select(p => new
             {
                 p.Id,
@@ -32,6 +35,8 @@ namespace Corta.Controllers
                 p.PurchaseCount,
                 p.ImageUrl,
                 p.Size,
+                Category = new { p.CategoryId, p.Category.Name, p.Category.Slug },
+                p.Material,
                 ProductImages = p.ProductImages.Select(pi => new
                 {
                     pi.Id,
