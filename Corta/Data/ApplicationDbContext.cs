@@ -22,7 +22,7 @@ namespace Corta.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
         public DbSet<Wishlist> Wishlists { get; set; }
-
+        public DbSet<Category> Categories => Set<Category>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,8 +31,22 @@ namespace Corta.Data
 
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<Category>()
+            .HasIndex(c => c.Slug)
+            .IsUnique();
+
+         modelBuilder.Entity<Product>()
+           .HasOne(p => p.Category)
+           .WithMany(c => c.Products)
+           .HasForeignKey(p => p.CategoryId)
+           .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Product>()
+                .Property(p => p.OldPrice)
                 .HasPrecision(18, 2);
 
             modelBuilder.Entity<PurchaseItem>()

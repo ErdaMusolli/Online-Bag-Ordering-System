@@ -3,6 +3,8 @@ import React from "react";
 import { useWishlist } from "../../context/WishlistContext";
 import { useGuestWishlist } from "../../context/GuestWishlistContext";
 
+const ASSET_HOST = "http://localhost:5197";
+
 function ProductItem({ product }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -10,10 +12,11 @@ function ProductItem({ product }) {
   const wishlistContext = token ? useWishlist() : useGuestWishlist();
   const { addToWishlist, removeFromWishlist, isInWishlist } = wishlistContext;
 
-  const imagePath =
-    product.imageUrl && product.imageUrl.startsWith("http")
-      ? product.imageUrl
-      : `http://localhost:5197${product.imageUrl}`;
+ const imagePath = product?.imageUrl
+    ? (product.imageUrl.startsWith("http")
+        ? product.imageUrl
+        : `${ASSET_HOST}${product.imageUrl}`)
+    : `${ASSET_HOST}/images/placeholder.jpg`;
 
   const handleWishlistClick = (e) => {
     e.stopPropagation();
@@ -31,25 +34,37 @@ function ProductItem({ product }) {
       onClick={() => navigate(`/product/${product.id}`)}
     >
       {product.badge && (
-  <span
-    className="position-absolute top-0 start-0 m-2"
-    style={{
-      backgroundColor: "#c0b7b6ff", 
-      color: "#fff",              
-      fontSize: "1.1rem",         
-      padding: "0.35em 0.65em",   
-      borderRadius: "0.5rem"     
-    }}
-  >
-    {product.badge}
-  </span>
-)}
-      <img
-        src={imagePath}
-        alt={product.name}
-        className="card-img-top img-fluid"
-        style={{ objectFit: "cover", height: "450px" }}
-      />
+        <span
+          className="position-absolute top-0 start-0 m-2"
+          style={{
+            backgroundColor: "#c0b7b6ff",
+            color: "#fff",
+            fontSize: "0.95rem",
+            padding: "0.35em 0.65em",
+            borderRadius: "0.5rem",
+            zIndex: 2,
+          }}
+        >
+          {product.badge}
+        </span>
+      )}
+
+      <div
+        className="w-100"
+        style={{ aspectRatio: "4 / 5", background: "#f8f9fa", overflow: "hidden" }}
+      >
+        <img
+          src={imagePath}
+          alt={product.name}
+          loading="lazy"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = `${ASSET_HOST}/images/placeholder.jpg`;
+          }}
+          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+        />
+      </div>
+
       <button
         onClick={handleWishlistClick}
         style={{

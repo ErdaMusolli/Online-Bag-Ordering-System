@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corta.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250902111415_SyncProducts")]
-    partial class SyncProducts
+    [Migration("20250904215213_SyncProductsProperly")]
+    partial class SyncProductsProperly
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
