@@ -12,11 +12,10 @@ function ProductItem({ product }) {
   const wishlistContext = token ? useWishlist() : useGuestWishlist();
   const { addToWishlist, removeFromWishlist, isInWishlist } = wishlistContext;
 
- const imagePath = product?.imageUrl
-    ? (product.imageUrl.startsWith("http")
-        ? product.imageUrl
-        : `${ASSET_HOST}${product.imageUrl}`)
-    : `${ASSET_HOST}/images/placeholder.jpg`;
+  const imagePath =
+    product.imageUrl && product.imageUrl.startsWith("http")
+      ? product.imageUrl
+      : `http://localhost:5197${product.imageUrl}`;
 
   const handleWishlistClick = (e) => {
     e.stopPropagation();
@@ -28,11 +27,11 @@ function ProductItem({ product }) {
   };
 
   return (
-    <div
-      className="card h-100 position-relative"
-      style={{ cursor: "pointer" }}
-      onClick={() => navigate(`/product/${product.id}`)}
-    >
+   <div
+  className="card h-100"
+  style={{ cursor: "pointer", position: "relative" }}  
+  onClick={() => navigate(`/product/${product.id}`)}
+>
       {product.badge && (
         <span
           className="position-absolute top-0 start-0 m-2"
@@ -53,17 +52,17 @@ function ProductItem({ product }) {
         className="w-100"
         style={{ aspectRatio: "4 / 5", background: "#f8f9fa", overflow: "hidden" }}
       >
-        <img
-          src={imagePath}
-          alt={product.name}
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = `${ASSET_HOST}/images/placeholder.jpg`;
-          }}
-          style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
-        />
-      </div>
+       <img
+        src={imagePath}
+        alt={product.name}
+        loading="eager"
+        onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = `${ASSET_HOST}/images/placeholder.jpg`;
+    }}
+    style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+  />
+</div>
 
       <button
         onClick={handleWishlistClick}
