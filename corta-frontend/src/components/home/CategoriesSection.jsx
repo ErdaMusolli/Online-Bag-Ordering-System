@@ -4,23 +4,25 @@ import { Link, useLocation } from "react-router-dom";
 const TOP = [
   { key: "all",    label: "All products",      to: "/store" },
   { key: "bags",   label: "Bags",              to: "/store?category=bags" },
-  { key: "summer", label: "Summer Collection", to: "/store?collection=summer" },
+  { key: "summer", label: "Summer Collection", to: "/store?category=summer-collection" },
 ];
 
+
 const FABRICS = [
-  { key: "corduroy", label: "Corduroy bag" },
-  { key: "denim",    label: "Denim bag" },
-  { key: "linen",    label: "Linen" },
-  { key: "canvas",   label: "Canvas" },
-  { key: "bamboo",   label: "Bamboo" },
+  { key: "corduroy",     label: "Corduroy bag" },
+  { key: "denim",        label: "Denim bag" },
+  { key: "linen",        label: "Linen" },
+  { key: "canvas",       label: "Canvas" },
+  { key: "bamboo",       label: "Bamboo" },
+  { key: "cotton-linen", label: "Cotton Linen" },
+  { key: "cotton cord",  label: "Cotton Cord"}
 ];
 
 export default function CategoriesSection() {
   const { pathname, search } = useLocation();
   const qs = new URLSearchParams(search);
-  const activeCat  = (qs.get("category")   || "").toLowerCase();
-  const activeColl = (qs.get("collection") || "").toLowerCase();
-  const activeFab  = (qs.get("fabric")     || "").toLowerCase();
+  const activeCat  = (qs.get("category") || "").toLowerCase();
+  const activeFab  = (qs.get("fabric")   || "").toLowerCase();
 
   const [openDesktop, setOpenDesktop] = useState(false);
   const [openMobile,  setOpenMobile]  = useState(false);
@@ -32,16 +34,15 @@ export default function CategoriesSection() {
   }, [activeFab]);
 
   const isTopActive = (k) => {
-    if (k === "all")    return pathname === "/store" && !activeCat && !activeColl && !activeFab;
+    if (k === "all")    return pathname === "/store" && !activeCat && !activeFab;
     if (k === "bags")   return activeCat === "bags";
-    if (k === "summer") return activeColl === "summer";
+    if (k === "summer") return activeCat === "summer-collection";   
     return false;
   };
 
   return (
     <aside>
       <style>{`
-        /* Mobile chips */
         .chips { display:flex; gap:.5rem; flex-wrap:wrap; }
         .chip {
           display:inline-flex; align-items:center; gap:.3rem;
@@ -53,7 +54,6 @@ export default function CategoriesSection() {
         .chip .check { display:none; }
         .chip.active .check { display:inline-block; }
 
-        /* Desktop links */
         .link {
           color:#111!important; text-decoration:none!important;
           display:block; padding:.25rem 0;
@@ -68,7 +68,6 @@ export default function CategoriesSection() {
           text-decoration:none; display:flex; align-items:center; gap:.4rem;
         }
         .fabric-toggle:hover { text-decoration:underline; }
-
         .caret { display:inline-block; transition:transform .15s ease; }
         .caret.open { transform:rotate(90deg); }
       `}</style>
@@ -76,7 +75,6 @@ export default function CategoriesSection() {
       <h4 className="mb-2">Browse by</h4>
       <hr className="mt-0 mb-3" />
 
-  
       <nav className="d-md-none">
         <div className="chips mb-2">
           {TOP.map(t => (
@@ -105,7 +103,7 @@ export default function CategoriesSection() {
             {FABRICS.map(f => (
               <Link
                 key={f.key}
-                to={`/store?fabric=${f.key}`}
+                to={`/store?fabric=${encodeURIComponent(f.key)}`}
                 className={`chip ${activeFab === f.key ? "active" : ""}`}
               >
                 <span className="check">✓</span>{f.label}
@@ -122,7 +120,7 @@ export default function CategoriesSection() {
         >
           All products
         </Link>
-        
+
         <Link
           to="/store?category=bags"
           className={`link hover-underline ${isTopActive("bags") ? "active" : ""}`}
@@ -131,7 +129,7 @@ export default function CategoriesSection() {
         </Link>
 
         <Link
-          to="/store?collection=summer"
+          to="/store?category=summer-collection"
           className={`link hover-underline ${isTopActive("summer") ? "active" : ""}`}
         >
           Summer Collection
@@ -154,7 +152,7 @@ export default function CategoriesSection() {
               {FABRICS.map(f => (
                 <Link
                   key={f.key}
-                  to={`/store?fabric=${f.key}`}
+                  to={`/store?fabric=${encodeURIComponent(f.key)}`}
                   className={`link hover-underline ${activeFab === f.key ? "active" : ""}`}
                   style={{ paddingLeft: ".9rem" }}
                 >

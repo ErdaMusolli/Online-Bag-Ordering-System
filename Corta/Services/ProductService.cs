@@ -26,14 +26,11 @@ namespace Corta.Services
                 q = q.Where(p => p.Category.Slug == categorySlug);
             }
 
-            if (!string.IsNullOrWhiteSpace(material))
-            {
-                var m = material.ToLower();
-                q = q.Where(p =>
-                    (p.Material ?? "").ToLower().Contains(m) ||
-                    (p.Name ?? "").ToLower().Contains(m) ||
-                    (p.Description ?? "").ToLower().Contains(m));
-            }
+         if (!string.IsNullOrWhiteSpace(material))
+{
+          var m = material.Trim().ToLower();
+          q = q.Where(p => p.Material != null && p.Material.ToLower() == m);
+}
 
             return await q.OrderByDescending(p => p.CreatedAt).ToListAsync();
         }

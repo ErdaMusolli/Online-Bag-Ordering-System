@@ -4,7 +4,7 @@ import { authFetch } from "../services/authFetch";
 import { getNewAccessToken } from "../services/tokenUtils";
 
 const ASSET_HOST = "http://localhost:5197";
-const MATERIALS = ["", "corduroy", "denim", "linen", "canvas", "bamboo"];
+const MATERIALS = ["", "corduroy", "denim", "linen", "canvas", "bamboo", "cotton-linen", "cotton cord"];
 
 function normalizeProduct(p) {
   const mainImage = p.imageUrl
