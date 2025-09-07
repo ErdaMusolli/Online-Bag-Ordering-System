@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import DiscountProducts from '../components/home/DiscountProducts';
-import StarRating from '../components/StarRating';
+import StarRating from "../components/review/StarRating";
 import Store from './Store';
 import ContactForm from '../components/ContactForm/ContactForm';
 import axios from 'axios';

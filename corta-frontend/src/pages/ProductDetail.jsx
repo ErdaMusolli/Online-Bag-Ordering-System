@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
+import StarRating from "../components/review/StarRating";
+
 
 const getImageUrl = (url) =>
   url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
@@ -19,6 +21,8 @@ function ProductDetail() {
   const { wishlist: guestWishlist, addToWishlist: addGuestWishlist, removeFromWishlist: removeGuestWishlist, isInWishlist: isInGuestWishlist } = useGuestWishlist();
   const token = localStorage.getItem("token");
   const [badge, setBadge] = useState("");
+  const [showReview, setShowReview] = useState(false);
+
 
   useEffect(() => {
     fetch(`http://localhost:5197/api/products/${id}`)
@@ -186,6 +190,27 @@ function ProductDetail() {
             <h5 className="fw-bold">Description</h5>
             <p>{product.description}</p>
           </div>
+<div className="mt-4">
+  <button
+    onClick={() => setShowReview(!showReview)}
+    className="btn btn-dark"
+    style={{
+      backgroundColor: "#4A5568",
+      color: "white",
+      borderRadius: "8px",
+      border: "none",
+    }}
+  >
+    {showReview ? "Close Review" : "Leave Review"}
+  </button>
+
+  {showReview && (
+    <div className="mt-3">
+      <StarRating productId={product.id} />
+    </div>
+  )}
+</div>
+
         </div>
       </div>
     </div>

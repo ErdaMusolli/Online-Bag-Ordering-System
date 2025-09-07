@@ -15,7 +15,7 @@ namespace Corta.Migrations
                 table: "PurchaseItems",
                 type: "int",
                 nullable: false,
-                defaultValue: 39,
+                defaultValue: 1,
                 oldClrType: typeof(int),
                 oldType: "int",
                 oldNullable: true);
