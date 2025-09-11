@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
-import StarRating from "../components/review/StarRating";
+import ReviewModal from "../components/review/ReviewModal"; 
 
 
 const getImageUrl = (url) =>
@@ -192,7 +192,7 @@ function ProductDetail() {
           </div>
 <div className="mt-4">
   <button
-    onClick={() => setShowReview(!showReview)}
+    onClick={() => setShowReview(true)}
     className="btn btn-dark"
     style={{
       backgroundColor: "#4A5568",
@@ -201,15 +201,17 @@ function ProductDetail() {
       border: "none",
     }}
   >
-    {showReview ? "Close Review" : "Leave Review"}
+    Leave Review
   </button>
 
   {showReview && (
-    <div className="mt-3">
-      <StarRating productId={product.id} />
-    </div>
+    <ReviewModal
+      product={product}
+      onClose={() => setShowReview(false)}
+    />
   )}
 </div>
+
 
         </div>
       </div>

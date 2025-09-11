@@ -38,6 +38,7 @@ public class ReviewsController : ControllerBase
             ProductId = dto.ProductId,
             UserId = userId,
             Rating = dto.Rating,
+             Comment = dto.Comment, 
             CreatedAt = DateTime.UtcNow,
             UserEmail = email
         };

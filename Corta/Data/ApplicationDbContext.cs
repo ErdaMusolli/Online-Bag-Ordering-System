@@ -98,6 +98,10 @@ namespace Corta.Data
          modelBuilder.Entity<Wishlist>()
             .HasIndex(w => new { w.UserId, w.ProductId })
             .IsUnique();
+         modelBuilder.Entity<Review>()
+         .HasOne(r => r.User)
+         .WithMany()
+         .HasForeignKey(r => r.UserId);
 
         }
     }
