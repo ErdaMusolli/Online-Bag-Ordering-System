@@ -84,10 +84,10 @@ namespace Corta.Data
                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
-             .HasOne(r => r.User)
-             .WithMany(u => u.Reviews)
-             .HasForeignKey(r => r.UserId)
-             .OnDelete(DeleteBehavior.Cascade);
+    .HasOne(r => r.User)
+    .WithMany(u => u.Reviews) 
+    .HasForeignKey(r => r.UserId)
+    .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<PurchaseItem>()
         .HasOne(pi => pi.Product)
@@ -98,10 +98,7 @@ namespace Corta.Data
          modelBuilder.Entity<Wishlist>()
             .HasIndex(w => new { w.UserId, w.ProductId })
             .IsUnique();
-         modelBuilder.Entity<Review>()
-         .HasOne(r => r.User)
-         .WithMany()
-         .HasForeignKey(r => r.UserId);
+         
 
         }
     }

@@ -192,15 +192,18 @@ function ProductDetail() {
           </div>
 <div className="mt-4">
   <button
-    onClick={() => setShowReview(true)}
-    className="btn btn-dark"
-    style={{
-      backgroundColor: "#4A5568",
-      color: "white",
-      borderRadius: "8px",
-      border: "none",
-    }}
-  >
+
+  onClick={() => setShowReview(true)}
+  className="btn"
+  style={{
+    backgroundColor: "#2563EB",
+    color: "white",
+    borderRadius: "8px",
+    border: "none",
+    padding: "10px 20px",
+    fontWeight: "500",
+  }}
+>
     Leave Review
   </button>
 

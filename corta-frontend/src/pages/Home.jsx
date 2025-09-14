@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import DiscountProducts from '../components/home/DiscountProducts';
-import StarRating from "../components/review/StarRating";
 import Store from './Store';
 import ContactForm from '../components/ContactForm/ContactForm';
 import axios from 'axios';
@@ -18,7 +17,7 @@ export default function Home() {
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState([]);
 
-    const [categoryFilter, setCategoryFilter] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState(null);
     
   const navigate = useNavigate();
 
@@ -71,8 +70,8 @@ export default function Home() {
     <div className="bg-light min-vh-100" style={{ overflowX: "hidden", width: "100%", paddingTop: "60px" }}>
       <div className="container my-5">
         <div className="row align-items-center">
-         <div className="col-12 col-md-4 col-lg-3 mb-4">
-      <CategoriesSection />  
+          <div className="col-12 col-md-4 col-lg-3 mb-4">
+            <CategoriesSection />  
           </div>
           <div className="col-lg-8">
             <DiscountProducts />
@@ -129,7 +128,6 @@ export default function Home() {
                           <>
                             <span className="text-muted text-decoration-line-through me-2">{Number(product.oldPrice).toFixed(2)}€</span>
                             <span className="fw-bold text-danger">{Number(product.price).toFixed(2)}€</span>
-                            
                           </>
                         ) : (
                           <span className="fw-bold">{Number(product.price).toFixed(2)}€</span>
@@ -152,7 +150,6 @@ export default function Home() {
       </section>
 
       <Store />
-      <StarRating />
       <section className="container my-5">
         <ContactForm />
       </section>

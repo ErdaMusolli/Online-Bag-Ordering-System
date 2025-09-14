@@ -27,7 +27,7 @@ public class ReviewsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Review>> Create(ReviewCreateDto dto)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userIdClaim = User.FindFirst("UserId");
         if (userIdClaim == null) return Unauthorized();
 
         int userId = int.Parse(userIdClaim.Value);
@@ -38,7 +38,7 @@ public class ReviewsController : ControllerBase
             ProductId = dto.ProductId,
             UserId = userId,
             Rating = dto.Rating,
-             Comment = dto.Comment, 
+            Comment = string.IsNullOrWhiteSpace(dto.Comment) ? "(Pa koment)" : dto.Comment,
             CreatedAt = DateTime.UtcNow,
             UserEmail = email
         };
@@ -47,7 +47,6 @@ public class ReviewsController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { id = result.Id }, result);
     }
 
-    
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult> Delete(int id)

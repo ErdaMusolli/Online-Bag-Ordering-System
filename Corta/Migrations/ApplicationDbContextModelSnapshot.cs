@@ -329,6 +329,7 @@ namespace Corta.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comment")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -347,14 +348,9 @@ namespace Corta.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("Reviews");
                 });
@@ -515,14 +511,10 @@ namespace Corta.Migrations
             modelBuilder.Entity("Corta.Models.Review", b =>
                 {
                     b.HasOne("Corta.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Reviews")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Corta.Models.User", null)
-                        .WithMany("Reviews")
-                        .HasForeignKey("UserId1");
 
                     b.Navigation("User");
                 });

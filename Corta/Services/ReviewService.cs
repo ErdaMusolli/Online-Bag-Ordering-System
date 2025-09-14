@@ -32,6 +32,7 @@ namespace Corta.Services
                     Id = r.Id,
                     ProductId = r.ProductId,
                     Rating = r.Rating,
+                     Comment = r.Comment,
                     UserEmail = r.UserEmail!,
                     CreatedAt = r.CreatedAt
                 })

@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { authFetch } from '../services/authFetch';
 import { getNewAccessToken } from '../services/tokenUtils';
 
+const getImageUrl = (url) =>
+  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
+
 const ViewReviews = () => {
   const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
@@ -21,28 +24,32 @@ const ViewReviews = () => {
     }
 
     try {
-     
+      
       const reviewsRes = await authFetch('http://localhost:5197/api/reviews');
       if (!reviewsRes.ok) throw new Error('Failed to fetch reviews');
       const reviewsData = await reviewsRes.json();
-      const reviewsArray = reviewsData.$values || [];
+      const reviewsArray = reviewsData.$values || reviewsData || [];
 
-      
       const productsRes = await authFetch('http://localhost:5197/api/products');
       if (!productsRes.ok) throw new Error('Failed to fetch products');
       const productsData = await productsRes.json();
-      const productsArray = productsData.$values || [];
+      const productsArray = productsData.$values || productsData || [];
 
-      
       const reviewsWithImages = reviewsArray.map((rev) => {
         const product = productsArray.find((p) => p.id === rev.productId);
         return {
-          ...rev,
-          productImageUrl: product ? product.imageUrl : null,
+          id: rev.id,
+          productId: rev.productId,
+          rating: rev.rating,
+          comment: rev.comment, 
+          userEmail: rev.userEmail,
+          createdAt: rev.createdAt,
+          productImageUrl: product ? getImageUrl(product.imageUrl) : null,
         };
       });
 
       setReviews(reviewsWithImages);
+      console.log("Reviews me comment:", reviewsWithImages);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -113,7 +120,7 @@ const ViewReviews = () => {
         ⭐ View Reviews
       </h2>
 
-      <div className="w-100" style={{ maxWidth: '1000px' }}>
+      <div className="w-100" style={{ maxWidth: '1100px' }}>
         <div className="row mb-3">
           <div className="col-12 col-md-6">
             <input
@@ -136,10 +143,11 @@ const ViewReviews = () => {
               <thead className="table-light">
                 <tr>
                   <th>#</th>
-                  <th>ProductImage</th> 
+                  <th>Product Image</th>
                   <th>Product ID</th>
                   <th>User Email</th>
                   <th>Rating</th>
+                  <th>Comment</th>
                   <th>Created At</th>
                   <th style={{ minWidth: '120px' }}>Actions</th>
                 </tr>
@@ -155,7 +163,7 @@ const ViewReviews = () => {
                           alt="Product"
                           style={{
                             width: '50px',
-                            height: 'auto',
+                            height: '50px',
                             objectFit: 'cover',
                           }}
                         />
@@ -166,6 +174,8 @@ const ViewReviews = () => {
                     <td>{rev.productId}</td>
                     <td>{rev.userEmail}</td>
                     <td>{rev.rating}</td>
+                    <td>{rev.comment}</td>
+
                     <td>{new Date(rev.createdAt).toLocaleString()}</td>
                     <td>
                       <button
