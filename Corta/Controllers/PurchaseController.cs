@@ -54,9 +54,14 @@ namespace Corta.Controllers
             var purchase = await _purchaseService.GetByIdAsync(id);
             if (purchase == null) return NotFound();
 
+        
+            var user = await _purchaseService.GetUserByIdAsync(purchase.UserId);
+
             var dto = new PurchaseDto
             {
+                Id = purchase.Id,
                 UserId = purchase.UserId,
+                User = user, 
                 CreatedAt = purchase.CreatedAt,
                 TotalAmount = purchase.TotalAmount,
                 Status = purchase.Status,
@@ -66,7 +71,11 @@ namespace Corta.Controllers
                     ProductName = pi.ProductName,
                     Quantity = pi.Quantity,
                     Price = pi.Price,
-                    ProductImageUrl = pi.ProductImageUrl
+                    ProductImageUrl = pi.ProductImageUrl,
+                    City = pi.City,
+                    Neighborhood = pi.Neighborhood,
+                    Street = pi.Street,
+                    PhoneNumber = pi.PhoneNumber
                 }).ToList()
             };
 
@@ -79,13 +88,14 @@ namespace Corta.Controllers
             try
             {
                 var purchase = await _purchaseService.CreateAsync(dto);
-                foreach (var item in purchase.PurchaseItems)
-        {
-            await _productService.IncreasePurchaseCountAsync(item.ProductId, item.Quantity);
-        }
 
-        return Ok(purchase);
-    }
+                foreach (var item in purchase.PurchaseItems)
+                {
+                    await _productService.IncreasePurchaseCountAsync(item.ProductId, item.Quantity);
+                }
+
+                return Ok(purchase);
+            }
             catch (ArgumentException ex)
             {
                 return BadRequest(new { error = ex.Message });
@@ -104,30 +114,34 @@ namespace Corta.Controllers
             return Ok("Purchase updated");
         }
 
-[HttpPut("{id}/status")]
-public async Task<IActionResult> UpdateStatus(int id, [FromBody] string newStatus)
-{
-    var purchase = await _purchaseService.GetByIdAsync(id);
-    if (purchase == null) return NotFound();
-
-    purchase.Status = newStatus;
-    await _purchaseService.UpdateAsync(id, new PurchaseDto
-    {
-        UserId = purchase.UserId,
-        TotalAmount = purchase.TotalAmount,
-        Status = newStatus,
-        PurchaseItems = purchase.PurchaseItems.Select(pi => new PurchaseItemDto
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string newStatus)
         {
-            ProductId = pi.ProductId,
-            ProductName = pi.ProductName,
-            Quantity = pi.Quantity,
-            Price = pi.Price,
-            ProductImageUrl = pi.ProductImageUrl
-        }).ToList()
-    });
+            var purchase = await _purchaseService.GetByIdAsync(id);
+            if (purchase == null) return NotFound();
 
-    return Ok(new { message = "Status updated" });
-}
+            purchase.Status = newStatus;
+            await _purchaseService.UpdateAsync(id, new PurchaseDto
+            {
+                UserId = purchase.UserId,
+                TotalAmount = purchase.TotalAmount,
+                Status = newStatus,
+                PurchaseItems = purchase.PurchaseItems.Select(pi => new PurchaseItemDto
+                {
+                    ProductId = pi.ProductId,
+                    ProductName = pi.ProductName,
+                    Quantity = pi.Quantity,
+                    Price = pi.Price,
+                    ProductImageUrl = pi.ProductImageUrl,
+                    City = pi.City,
+                    Neighborhood = pi.Neighborhood,
+                    Street = pi.Street,
+                    PhoneNumber = pi.PhoneNumber
+                }).ToList()
+            });
+
+            return Ok(new { message = "Status updated" });
+        }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
