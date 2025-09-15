@@ -20,13 +20,14 @@ namespace Corta.Controllers
         }
         private int? GetUserId()
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return null;
-            }
-            return userId;
+            string? raw =
+                User.FindFirst("UserId")?.Value ??
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                User.FindFirst("sub")?.Value;
+
+            return int.TryParse(raw, out var id) ? id : (int?)null;
         }
+
 
         [HttpGet]
         public async Task<IActionResult> GetCart()

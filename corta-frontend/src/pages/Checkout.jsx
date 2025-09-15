@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CartContext } from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 
 function getUserIdFromToken() {
   const token = localStorage.getItem("token");
@@ -11,7 +11,7 @@ function getUserIdFromToken() {
 }
 
 function Checkout() {
-  const { cartItems, clearCart } = useContext(CartContext);
+  const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");

@@ -5,7 +5,7 @@
 namespace Corta.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAddressToPurchaseItem : Migration
+    public partial class Rebuild_After_ReviewsFix : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

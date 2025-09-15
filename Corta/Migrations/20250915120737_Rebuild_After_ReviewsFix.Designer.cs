@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Corta.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250909205334_AddCommentToReview")]
-    partial class AddCommentToReview
+    [Migration("20250915120737_Rebuild_After_ReviewsFix")]
+    partial class Rebuild_After_ReviewsFix
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -265,6 +265,18 @@ namespace Corta.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Neighborhood")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
@@ -285,6 +297,10 @@ namespace Corta.Migrations
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
+
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -332,6 +348,7 @@ namespace Corta.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Comment")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -350,14 +367,9 @@ namespace Corta.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("Reviews");
                 });
@@ -516,47 +528,15 @@ namespace Corta.Migrations
                 });
 
             modelBuilder.Entity("Corta.Models.Review", b =>
-{
-    b.Property<int>("Id")
-        .ValueGeneratedOnAdd()
-        .HasColumnType("int");
+                {
+                    b.HasOne("Corta.Models.User", "User")
+                        .WithMany("Reviews")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-    b.Property<string>("Comment")
-        .HasColumnType("nvarchar(max)");
-
-    b.Property<DateTime>("CreatedAt")
-        .HasColumnType("datetime2");
-
-    b.Property<int>("ProductId")
-        .HasColumnType("int");
-
-    b.Property<int>("Rating")
-        .HasColumnType("int");
-
-    b.Property<string>("UserEmail")
-        .IsRequired()
-        .HasColumnType("nvarchar(max)");
-
-    b.Property<int>("UserId")
-        .HasColumnType("int");
-
-    b.HasKey("Id");
-
-    b.HasIndex("UserId");
-
-    b.ToTable("Reviews");
-
-    b.HasOne("Corta.Models.User", "User")
-        .WithMany()
-        .HasForeignKey("UserId")
-        .OnDelete(DeleteBehavior.Cascade)
-        .IsRequired();
-
-    b.Navigation("User");
-});
-
+                    b.Navigation("User");
+                });
 
             modelBuilder.Entity("Corta.Models.Wishlist", b =>
                 {

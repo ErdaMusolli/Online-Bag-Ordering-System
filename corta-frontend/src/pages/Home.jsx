@@ -44,14 +44,6 @@ export default function Home() {
     fetchProducts();
   }, []);
 
-  const handleChatSubmit = (e) => {
-    e.preventDefault();
-    if (chatInput.trim()) {
-      setChatMessages([...chatMessages, { text: chatInput }]);
-      setChatInput('');
-    }
-  };
-
   const goToStore = (type) => {
     let products = allProducts.map(p => ({ ...p }));
     if (type === "bestsellers") {
