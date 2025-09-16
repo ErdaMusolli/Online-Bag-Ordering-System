@@ -1,13 +1,13 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
-import { CartContext } from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 
 const getImageUrl = (url) =>
   url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
 
 const GuestWishlist = () => {
   const { wishlist, removeFromWishlist } = useGuestWishlist();
-  const { cartItems, addToCart } = useContext(CartContext);
+  const { cartItems, addToCart } = useCart();
   const [wishlistCartIds, setWishlistCartIds] = useState([]);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CartContext } from "../context/CartContext";
+import { useCart  } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
 import ReviewModal from "../components/review/ReviewModal"; 
@@ -16,7 +16,7 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("S");
   const navigate = useNavigate();
-  const { addToCart } = useContext(CartContext);
+  const { addToCart } = useCart();
   const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { wishlist: guestWishlist, addToWishlist: addGuestWishlist, removeFromWishlist: removeGuestWishlist, isInWishlist: isInGuestWishlist } = useGuestWishlist();
   const token = localStorage.getItem("token");

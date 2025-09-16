@@ -1,10 +1,9 @@
 import { useContext } from "react";
-import { CartContext } from "../../context/CartContext";
+import { useCart  } from "../../context/CartContext";
 
 
 const LogoutButton = () => {
-  const { clearCart } = useContext(CartContext); 
-
+  const { clearCart }  = useCart();
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
 

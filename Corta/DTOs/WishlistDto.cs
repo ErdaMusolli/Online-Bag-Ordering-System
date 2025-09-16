@@ -6,6 +6,8 @@ namespace Corta.DTOs
         public string ProductName { get; set; } = string.Empty;
         public string ProductImageUrl { get; set; } = string.Empty;
         public decimal Price { get; set; }  
+         public decimal? OldPrice { get; set; } 
+        public int Stock { get; set; }  
         public DateTime CreatedAt { get; set; }
     }
 }

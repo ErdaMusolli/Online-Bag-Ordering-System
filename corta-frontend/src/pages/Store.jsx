@@ -13,6 +13,7 @@ function Store({ cart = [], setCart = () => {} }) {
   const location = useLocation();
 
   const qs = new URLSearchParams(location.search);
+  const searchTerm = (qs.get("search") || "").toLowerCase();
   const category = (qs.get("category") || "").toLowerCase(); 
   const fabric   = (qs.get("fabric")   || "").toLowerCase();
 
@@ -55,6 +56,46 @@ const sorted = useMemo(() => {
 
   return copy;
 }, [products, sortOrder]);
+
+const productsWithBadges = useMemo(() => {
+  const arr = (location.state?.products || sorted)
+    .map(p => {
+      let badge;
+
+      if (location.state?.type === "bestsellers" && p.badge === "Best Seller") {
+        badge = "Best Seller";
+      } else if (location.state?.type === "newarrivals" && p.badge === "New Arrival") {
+        badge = "New Arrival";
+      }
+
+      if (p.stock <= 0) badge = "Out of Stock";
+
+      return { ...p, badge };
+    })
+    .filter(p => {
+      const matchesSearch = searchTerm
+        ? p.name.toLowerCase().includes(searchTerm)
+        : true;
+
+      const categorySlug = p.category?.slug?.toLowerCase().trim() || "";
+      const selectedCategory = category ? category.toLowerCase().trim() : "";
+
+      const matchesCategory = selectedCategory
+        ? categorySlug === selectedCategory
+        : true;
+
+      return matchesSearch && matchesCategory;
+    });
+
+  if (location.state?.type === "bestsellers") {
+    arr.sort((a, b) => (b.badge === "Best Seller" ? 1 : 0) - (a.badge === "Best Seller" ? 1 : 0));
+  } else if (location.state?.type === "newarrivals") {
+    arr.sort((a, b) => (b.badge === "New Arrival" ? 1 : 0) - (a.badge === "New Arrival" ? 1 : 0));
+  }
+
+  return arr;
+}, [sorted, location.state, searchTerm, category]);
+
 
 
   const handleAddToCart = (product, quantity = 1, size = "S") => {
@@ -119,16 +160,24 @@ const sorted = useMemo(() => {
           <option value="desc">Price: Highest to Lowest</option>
         </select>
       </div>
-
-      <ProductList
-        products={sorted}
-        onAddToCart={handleAddToCart}
-        onToggleWishlist={(product) =>
-          isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product)
-        }
-        isFavorite={(product) => isInWishlist(product.id)}
-      />
+    {productsWithBadges.length === 0 ? (
+    <div
+      className="d-flex justify-content-center align-items-center"
+      style={{ height: '50vh', width: '100%' }}
+    >
+      <p className="fs-4 text-center">No products found</p>
     </div>
+  ) : (
+    <ProductList
+      products={productsWithBadges}
+      onAddToCart={handleAddToCart}
+      onToggleWishlist={(product) =>
+        isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product)
+      }
+      isFavorite={(product) => isInWishlist(product.id)}
+    />
+  )}
+</div>
   );
 }
 

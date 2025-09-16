@@ -27,6 +27,8 @@ namespace Corta.Services
                 ProductName = w.Product!.Name,
                 ProductImageUrl = w.Product.ImageUrl ?? "",
                 Price = w.Product.Price,
+                OldPrice = w.Product.OldPrice,
+                Stock = w.Product.Stock,
                 CreatedAt = w.CreatedAt
             }).ToList();
         }
@@ -57,6 +59,8 @@ namespace Corta.Services
                 ProductName = product!.Name,
                 ProductImageUrl = product.ImageUrl ?? "",
                 Price = product.Price,
+                OldPrice = product.OldPrice,
+                Stock = product.Stock,
                 CreatedAt = wishlistItem.CreatedAt
             };
         }

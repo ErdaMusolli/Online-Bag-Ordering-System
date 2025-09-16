@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CartItem from "../components/cart/CartItem";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { CartContext } from "../context/CartContext";
+import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
 
@@ -21,7 +21,7 @@ function getUserIdFromToken() {
 }
 
 function Cart() {
-  const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useContext(CartContext);
+  const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
   const [products, setProducts] = useState([]);
   const [popupVisible, setPopupVisible] = useState(false);
   const [popupProduct, setPopupProduct] = useState(null);
@@ -190,9 +190,9 @@ function Cart() {
              <CartItem
   item={item}
   onRemove={removeFromCart}
-  onQuantityChange={(productId, size, newQuantity) =>
-    updateQuantity(productId, size, Math.min(newQuantity, item.stock))
-  }
+ onQuantityChange={(productId, size, newQuantity) =>
+   updateQuantity(productId, Math.min(newQuantity, item.stock), size)
+ }
   
 />
 

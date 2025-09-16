@@ -15,6 +15,11 @@ public int ProductId { get; set; }
         public string ProductName { get; set; } = string.Empty;
         public string ProductImageUrl { get; set; } = string.Empty;
         public int Quantity { get; set; }
+        public string City { get; set; } = string.Empty;
+        public string Neighborhood { get; set; } = string.Empty;
+        public string Street { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }

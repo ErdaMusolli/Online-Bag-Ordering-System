@@ -105,7 +105,7 @@ const ManagePurchases = () => {
 
       <h2 className="text-center mb-4" style={{ fontFamily: 'Georgia, serif' }}>🛒 Manage Purchases</h2>
 
-      <div className="w-100" style={{ maxWidth: '1200px' }}>
+      <div className="w-100" style={{ maxWidth: '1400px' }}>
         <div className="row mb-3 g-2">
           <div className="col-12 col-md-4">
             <input
@@ -131,6 +131,10 @@ const ManagePurchases = () => {
                   <th>Product Name</th>
                   <th>Quantity</th>
                   <th>Price</th>
+                  <th>City</th>
+                  <th>Neighborhood</th>
+                  <th>Street</th>
+                  <th>Phone</th>
                   <th>Total</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -159,8 +163,13 @@ const ManagePurchases = () => {
                           <td>{item.productName}</td>
                           <td>{item.quantity}</td>
                           <td>${item.price.toFixed(2)}</td>
+
                           {idx === 0 && (
                             <>
+                              <td rowSpan={purchase.purchaseItems.length}>{purchase.purchaseItems[0]?.city || '-'}</td>
+                              <td rowSpan={purchase.purchaseItems.length}>{purchase.purchaseItems[0]?.neighborhood || '-'}</td>
+                              <td rowSpan={purchase.purchaseItems.length}>{purchase.purchaseItems[0]?.street || '-'}</td>
+                              <td rowSpan={purchase.purchaseItems.length}>{purchase.purchaseItems[0]?.phoneNumber || '-'}</td>
                               <td rowSpan={purchase.purchaseItems.length}>${purchase.totalAmount.toFixed(2)}</td>
                               <td rowSpan={purchase.purchaseItems.length}>{getStatusBadge(purchase.status)}</td>
                               <td rowSpan={purchase.purchaseItems.length}>
@@ -191,6 +200,7 @@ const ManagePurchases = () => {
                           />
                         </td>
                         <td colSpan="2"><i>No items</i></td>
+                        <td colSpan="4">-</td>
                         <td>${purchase.totalAmount.toFixed(2)}</td>
                         <td>{getStatusBadge(purchase.status)}</td>
                         <td>
@@ -210,7 +220,7 @@ const ManagePurchases = () => {
                   )
                 ) : (
                   <tr>
-                    <td colSpan="9" className="text-center">No purchases found</td>
+                    <td colSpan="13" className="text-center">No purchases found</td>
                   </tr>
                 )}
               </tbody>

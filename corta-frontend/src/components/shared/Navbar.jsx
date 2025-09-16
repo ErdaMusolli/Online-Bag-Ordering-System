@@ -5,6 +5,8 @@ import LogoutButton from './LogoutButton';
 import UserMenu from '../shared/UserMenu';
 import { useWishlist } from '../../context/WishlistContext';
 import { useGuestWishlist } from '../../context/GuestWishlistContext';
+import { useCart } from "../../context/CartContext";
+import { jwtDecode } from 'jwt-decode';
 
 
 
@@ -12,6 +14,7 @@ import { useGuestWishlist } from '../../context/GuestWishlistContext';
 const Navbar = () => {
   const { wishlist: userWishlist } = useWishlist();
   const { wishlist: guestWishlist } = useGuestWishlist();
+  const { cartCount } = useCart();
   const token = localStorage.getItem("token");
   const isAuthenticated = !!token;
 
@@ -38,6 +41,15 @@ const Navbar = () => {
       ? userWishlist.some(p => p.id === productId)
       : guestWishlist.some(p => p.id === productId);
 
+      let isAdmin = false;
+    if (token) {
+    try {
+    const decoded = jwtDecode(token);
+    isAdmin = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'admin';
+  } catch (err) {
+    console.error(err);
+  }
+}
 
   return (
     <nav
@@ -45,7 +57,14 @@ const Navbar = () => {
   style={{ backgroundColor: "#e0e0e0",  height: "80px" }} 
 >
       <div className="container-fluid">
-
+        {isAdmin && (
+   <button
+    className="btn btn-sm btn-outline-dark me-3"
+    onClick={() => { navigate("/admin"); closeNavbar(); }}
+  >
+    Dashboard
+  </button>
+)}
        <Link 
   className="navbar-brand ps-5" 
   to="/" 
@@ -120,11 +139,19 @@ const Navbar = () => {
   </Link>
 </li>
 
-  <li className="nav-item">
-    <Link to="/cart" className="nav-link" onClick={closeNavbar}>
-      <i className="bi bi-cart fs-5"></i>
-    </Link>
-  </li>
+ <li className="nav-item position-relative">
+  <Link to="/cart" className="nav-link" onClick={closeNavbar}>
+    <i className="bi bi-cart fs-5"></i>
+    {cartCount > 0 && (
+      <span
+        className="position-absolute badge rounded-pill bg-danger"
+        style={{ fontSize: "0.7rem", top: "2px", right: "-8px" }}
+      >
+        {cartCount}
+      </span>
+    )}
+  </Link>
+</li>
 
   <Link to="/news" className="nav-link fw-bold">
   <i className="bi bi-globe me-1"></i> 
