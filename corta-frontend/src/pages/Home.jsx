@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import DiscountProducts from '../components/home/DiscountProducts';
 import Store from './Store';
-import ContactForm from '../components/ContactForm/ContactForm';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import CategoriesSection from '../components/home/CategoriesSection';
@@ -13,12 +13,7 @@ export default function Home() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
 
-  const [categoryFilter, setCategoryFilter] = useState(null);
-    
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,14 +38,6 @@ export default function Home() {
     }
     fetchProducts();
   }, []);
-
-  const handleChatSubmit = (e) => {
-    e.preventDefault();
-    if (chatInput.trim()) {
-      setChatMessages([...chatMessages, { text: chatInput }]);
-      setChatInput('');
-    }
-  };
 
   const goToStore = (type) => {
     let products = allProducts.map(p => ({ ...p }));
@@ -150,39 +137,6 @@ export default function Home() {
       </section>
 
       <Store />
-      <section className="container my-5">
-        <ContactForm />
-      </section>
-
-      <div className="position-fixed bottom-0 end-0 m-4" style={{ maxWidth: "100%" }}>
-        {!chatOpen ? (
-          <button className="btn btn-dark rounded-circle p-3" onClick={() => setChatOpen(true)}>💬</button>
-        ) : (
-          <div className="card shadow" style={{ width: "100%", maxWidth: 320 }}>
-            <div className="card-header d-flex justify-content-between align-items-center">
-              <strong>Chat with us</strong>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setChatOpen(false)}>×</button>
-            </div>
-            <div className="card-body" style={{ maxHeight: 220, overflowY: "auto" }}>
-              {chatMessages.map((msg, i) => (
-                <div key={i} className="mb-2">
-                  <small className="text-muted">You:</small> {msg.text}
-                </div>
-              ))}
-            </div>
-            <form onSubmit={handleChatSubmit} className="card-footer d-flex">
-              <input
-                type="text"
-                className="form-control me-2"
-                placeholder="Type a message..."
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-              />
-              <button type="submit" className="btn btn-dark">Send</button>
-            </form>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -33,6 +33,7 @@ import TermsAndConditions from './components/ContactForm/TermsAndConditions';
 import RefundPolicy from './components/ContactForm/RefundPolicy';
 import Navbar from './components/shared/Navbar';
 import Footer from './components/shared/Footer';
+import ContactForm from './components/ContactForm/ContactForm';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from "./context/WishlistContext";
 import GuestWishlist from "./pages/GuestWishlist";
@@ -54,6 +55,7 @@ function AppContent() {
 
   const [products, setProducts] = useState([]);
   const [cartItems, setCartItems] = useState([]);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     fetch("http://localhost:5197/api/products")
@@ -102,17 +104,14 @@ function AppContent() {
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
         <Route path="/profile" element={<ProfileLayout />}>
-
-
-      <Route
-        path="/profile"
-         element={
-        <ProtectedRoute>
-           <ProfileLayout />
-        </ProtectedRoute>
-       }
-      ></Route>
-
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                 <ProfileLayout />
+              </ProtectedRoute>
+            }
+          ></Route>
           <Route index element={<PersonalData />} />
           <Route path="personal-data" element={<PersonalData />} />
           <Route path="orders" element={<Orders />} />
@@ -123,64 +122,13 @@ function AppContent() {
         </Route>
 
         <Route path="/guest-wishlist" element={<GuestWishlist onAddToCart={addToCart} />}/>
-
-
-  <Route
-    path="/admin"
-    element={
-      <ProtectedRoute role="admin">
-        <DashboardAdmin />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/manage-users"
-    element={
-      <ProtectedRoute role="admin">
-        <ManageUsers />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/manage-products"
-    element={
-      <ProtectedRoute role="admin">
-        <ManageProducts />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/manage-purchases"
-    element={
-      <ProtectedRoute role="admin">
-        <ManagePurchases />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/manage-news"
-    element={
-      <ProtectedRoute role="admin">
-        <ManageNews />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/view-contact"
-    element={
-      <ProtectedRoute role="admin">
-        <ViewContacts />
-      </ProtectedRoute>
-    }
-  />
-  <Route
-    path="/view-reviews"
-    element={
-      <ProtectedRoute role="admin">
-        <ViewReviews />
-      </ProtectedRoute>
-    }
-  />
+        <Route path="/admin" element={<ProtectedRoute role="admin"><DashboardAdmin /></ProtectedRoute>} />
+        <Route path="/manage-users" element={<ProtectedRoute role="admin"><ManageUsers /></ProtectedRoute>} />
+        <Route path="/manage-products" element={<ProtectedRoute role="admin"><ManageProducts /></ProtectedRoute>} />
+        <Route path="/manage-purchases" element={<ProtectedRoute role="admin"><ManagePurchases /></ProtectedRoute>} />
+        <Route path="/manage-news" element={<ProtectedRoute role="admin"><ManageNews /></ProtectedRoute>} />
+        <Route path="/view-contact" element={<ProtectedRoute role="admin"><ViewContacts /></ProtectedRoute>} />
+        <Route path="/view-reviews" element={<ProtectedRoute role="admin"><ViewReviews /></ProtectedRoute>} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/refund" element={<RefundPolicy />} />
@@ -189,7 +137,18 @@ function AppContent() {
         <Route path="/payment-methods" element={<PaymentMethods />} />
       </Routes>
 
-      {!hideLayout && <Footer />}
+      {!hideLayout && <Footer onContactClick={() => setShowContactModal(true)} />}
+
+    {showContactModal && (
+  <div
+    className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+    style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1050 }}
+  >
+    <div className="bg-white p-4 rounded shadow" style={{ maxWidth: "600px", width: "90%" }}>
+      <ContactForm onClose={() => setShowContactModal(false)} />
+    </div>
+  </div>
+)}
     </>
   );
 }

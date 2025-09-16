@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-const Footer = () => {
+const Footer = ({ onContactClick }) => {
   return (
     <footer
       className="py-4 mt-auto"
@@ -87,6 +87,14 @@ const Footer = () => {
             <a href="https://instagram.com/corta.clothing/" className="text-dark">
               <i className="bi bi-instagram"></i>
             </a>
+            <div className="mt-3">
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={onContactClick}
+              >
+                📬 Contact Us
+              </button>
+            </div>
           </div>
         </div>
 
