@@ -1,10 +1,15 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { authFetch } from "../services/authFetch";
-import { getNewAccessToken } from "../services/tokenUtils";
+import api from "../services/apiClient";
 
-const ASSET_HOST = "http://localhost:5197";
 const MATERIALS = ["", "corduroy", "denim", "linen", "canvas", "bamboo", "cotton-linen", "cotton cord"];
+
+const ASSET_HOST = "https://localhost:7254";
+const getImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `${ASSET_HOST}${url.startsWith("/") ? url : `/images/${url}`}`;
+};
 
 function normalizeProduct(p) {
   const mainImage = p.imageUrl
@@ -12,13 +17,14 @@ function normalizeProduct(p) {
     : null;
 
   const rawImgs =
-    (p.ProductImages && (Array.isArray(p.ProductImages.$values) ? p.ProductImages.$values : p.ProductImages)) ||
-    (p.productImages && (Array.isArray(p.productImages.$values) ? p.productImages.$values : p.productImages)) ||
+    (p.ProductImages && (Array.isArray(p.ProductImages?.$values) ? p.ProductImages.$values : p.ProductImages)) ||
+    (p.productImages && (Array.isArray(p.productImages?.$values) ? p.productImages.$values : p.productImages)) ||
     [];
 
   const productImages = rawImgs.map((img) => {
     const url = img.imageUrl || img.url || img.path || "";
-    return { ...img, imageUrl: url.startsWith("/") ? url : `/${url}` };
+    const path = url.startsWith("/") ? url : `/${url}`;
+    return { ...img, imageUrl: path };
   });
 
   const category = p.category || p.Category || null;
@@ -67,10 +73,9 @@ export default function ManageProducts() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${ASSET_HOST}/api/categories`);
-        const raw = await res.json();
-        const arr = Array.isArray(raw) ? raw : raw.$values || [];
-        setCategories(arr);
+        const { data } = await api.get("/categories");
+        const raw = Array.isArray(data) ? data : data?.$values ?? [];
+        setCategories(raw);
       } catch (e) {
         console.error("Failed to load categories", e);
         setCategories([]);
@@ -79,18 +84,14 @@ export default function ManageProducts() {
   }, []);
 
   const loadProducts = useCallback(async () => {
-    const token = localStorage.getItem("token") || (await getNewAccessToken());
-    if (!token) return navigate("/login");
-
     try {
-      const res = await authFetch(`${ASSET_HOST}/api/products`);
-      if (!res.ok) throw new Error("Failed to fetch products");
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : data.$values || [];
+      const { data } = await api.get("/products");
+      const list = Array.isArray(data) ? data : data?.$values ?? [];
       setProducts(list.map(normalizeProduct));
     } catch (err) {
-      console.error("Error fetching products:", err);
+      console.error("Error fetching products:", err?.response?.status || err?.message);
       setProducts([]);
+      if (err?.response?.status === 401) navigate("/login", { replace: true });
     }
   }, [navigate]);
 
@@ -100,21 +101,12 @@ export default function ManageProducts() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this product?")) return;
-    const token = localStorage.getItem("token") || (await getNewAccessToken());
-    if (!token) return navigate("/login");
-
     try {
-      const res = await fetch(`${ASSET_HOST}/api/products/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        await loadProducts();
-      } else {
-        alert("Delete failed");
-      }
+      await api.delete(`/products/${id}`);
+      await loadProducts();
     } catch (err) {
-      console.error(err);
+      console.error("Delete failed:", err?.response?.status || err?.message);
+      alert("Delete failed");
     }
   };
 
@@ -136,60 +128,53 @@ export default function ManageProducts() {
   };
 
   const handleUpdate = async () => {
-    const token = localStorage.getItem("token") || (await getNewAccessToken());
-    if (!token) return navigate("/login");
+    if (!editingProduct) return;
+    try {
+      const fd = new FormData();
+      fd.append("name", String(editForm.name ?? ""));
+      fd.append("description", String(editForm.description ?? ""));
+      fd.append("price", String(editForm.price ?? ""));
+      if (editForm.oldPrice !== null && editForm.oldPrice !== undefined) {
+        fd.append("oldPrice", String(editForm.oldPrice));
+      }
+      fd.append("stock", String(editForm.stock ?? ""));
+      fd.append("categoryId", String(editForm.categoryId ?? ""));
+      fd.append("material", String(editForm.material ?? ""));
 
-    const formData = new FormData();
-    formData.append("price", editForm.price);
-    if (editForm.oldPrice !== null && editForm.oldPrice !== undefined) formData.append("oldPrice", editForm.oldPrice);
-    formData.append("name", editForm.name);
-    formData.append("description", editForm.description);
-    formData.append("stock", editForm.stock);
-    formData.append("categoryId", editForm.categoryId); 
-    formData.append("material", editForm.material || ""); 
+      if (editForm.image) {
+        fd.append("image", editForm.image);
+      } else if (editForm.existingMainImage) {
+        fd.append("existingMainImageUrl", editForm.existingMainImage);
+      }
 
-    if (editForm.image) formData.append("image", editForm.image);
-    else if (editForm.existingMainImage) formData.append("existingMainImageUrl", editForm.existingMainImage);
+      editForm.additionalImages.forEach((file) => fd.append("additionalImages", file));
 
-    editForm.additionalImages.forEach((file) => formData.append("additionalImages", file));
-
-    const res = await fetch(`${ASSET_HOST}/api/products/${editingProduct.id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-
-    if (res.ok) {
+      await api.put(`/products/${editingProduct.id}`, fd); 
       await loadProducts();
       setEditingProduct(null);
-    } else {
+    } catch (err) {
+      console.error("Update failed:", err?.response?.status || err?.message);
       alert("Update failed");
     }
   };
 
   const handleAdd = async () => {
-    const token = localStorage.getItem("token") || (await getNewAccessToken());
-    if (!token) return navigate("/login");
+    try {
+      const fd = new FormData();
+      fd.append("name", String(newProduct.name ?? ""));
+      fd.append("description", String(newProduct.description ?? ""));
+      fd.append("price", String(newProduct.price ?? ""));
+      if (newProduct.oldPrice !== null && newProduct.oldPrice !== undefined) {
+        fd.append("oldPrice", String(newProduct.oldPrice));
+      }
+      fd.append("stock", String(newProduct.stock ?? ""));
+      fd.append("categoryId", String(newProduct.categoryId ?? ""));
+      fd.append("material", String(newProduct.material ?? ""));
 
-    const formData = new FormData();
-    formData.append("price", newProduct.price);
-    if (newProduct.oldPrice !== null && newProduct.oldPrice !== undefined) formData.append("oldPrice", newProduct.oldPrice);
-    formData.append("name", newProduct.name);
-    formData.append("description", newProduct.description);
-    formData.append("stock", newProduct.stock);
-    formData.append("categoryId", newProduct.categoryId); 
-    formData.append("material", newProduct.material || ""); 
+      if (newProduct.image) fd.append("image", newProduct.image);
+      newProduct.additionalImages.forEach((file) => fd.append("additionalImages", file));
 
-    if (newProduct.image) formData.append("image", newProduct.image);
-    newProduct.additionalImages.forEach((file) => formData.append("additionalImages", file)); 
-
-    const res = await fetch(`${ASSET_HOST}/api/products`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
-
-    if (res.ok) {
+      await api.post("/products", fd);
       await loadProducts();
       setShowAddModal(false);
       setNewProduct({
@@ -203,7 +188,8 @@ export default function ManageProducts() {
         image: null,
         additionalImages: [],
       });
-    } else {
+    } catch (err) {
+      console.error("Adding product failed:", err?.response?.status || err?.message);
       alert("Adding product failed");
     }
   };
@@ -211,6 +197,7 @@ export default function ManageProducts() {
   const filteredProducts = products.filter((p) =>
     (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+
 
   return (
     <div className="container-fluid manage-products-container">

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from "../../services/apiClient";
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ const RegisterForm = () => {
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -21,73 +23,42 @@ const RegisterForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
 
-    if (formData.username.length < 3) {
-      setError('Username must be at least 3 characters');
-      return;
-    }
+    const username = formData.username.trim();
+    const email = formData.email.trim();
+    const password = formData.password;
 
+    if (username.length < 3) return setError("Username must be at least 3 characters");
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      setError('Invalid email format');
-      return;
-    }
+    if (!emailRegex.test(email)) return setError("Invalid email format");
+    if (password.length < 8) return setError("Password must be at least 8 characters long");
+    if (!/[A-Z]/.test(password)) return setError("Password must include at least one uppercase letter");
+    if (!/\d/.test(password)) return setError("Password must include at least one number");
+    if (password !== formData.confirmPassword) return setError("Passwords do not match");
 
-    const { password } = formData;
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-
-    if (!/[A-Z]/.test(password)) {
-      setError('Password must include at least one uppercase letter');
-      return;
-    }
-
-    if (!/\d/.test(password)) {
-      setError('Password must include at least one number');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
+    setSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:5197/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: 'user',
-        }),
-      });
+     await api.post("/auth/register", { username, email, password });
 
-      if (response.ok) {
-        setSuccess('Registration successful!');
-        setError('');
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-        });
+      setSuccess("Registration successful!");
+      setFormData({ username: "", email: "", password: "", confirmPassword: "" });
 
-        setTimeout(() => {
-          setSuccess('');
-          navigate('/login');
-        }, 1500);
-      } else {
-        const data = await response.text();
-        setError(data.message || 'Email already exists');
-        setSuccess('');
-      }
-    } catch {
-      setError('Server error or backend not reachable');
+      setTimeout(() => {
+        setSuccess("");
+        navigate("/login");
+      }, 1200);
+    } catch (err) {
+      const msg =
+        (typeof err?.response?.data === "string" && err.response.data) ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Email already exists";
+      setError(msg);
+    } finally {
+      setSubmitting(false);
     }
   };
 

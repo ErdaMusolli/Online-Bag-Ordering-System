@@ -5,20 +5,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import { useCart } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
+import { useAuth } from "../context/AuthContext";
+import api, { API_ORIGIN } from "../services/apiClient";
 
-const getImageUrl = (url) => {
-  if (!url) return "/placeholder.jpg"; 
-  if (url.startsWith("http")) return url; 
-  return `http://localhost:5197${url.startsWith("/images/") ? url : `/images/${url}`}`;
-};
-
-function getUserIdFromToken() {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
-  const payload = token.split(".")[1];
-  const decoded = JSON.parse(atob(payload));
-  return decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
-}
+const getImageUrl = (url) =>
+  !url ? "/placeholder.jpg" :
+  url.startsWith("http") ? url :
+  new URL(url.startsWith("/images/") ? url : `/images/${url}`, API_ORIGIN).href;
 
 function Cart() {
   const { cartItems, addToCart, removeFromCart, updateQuantity, clearCart } = useCart();
@@ -29,31 +22,33 @@ function Cart() {
   const [popupSize, setPopupSize] = useState("");
   const navigate = useNavigate();
 
-  const token = localStorage.getItem("token");
-  const wishlistContext = token ? useWishlist() : useGuestWishlist();
-  const { wishlist } = wishlistContext;
+ const { isAuthenticated } = useAuth(); 
+  const userWishlistCtx = useWishlist();
+  const guestWishlistCtx = useGuestWishlist();
+  const wishlistContext = isAuthenticated ? userWishlistCtx : guestWishlistCtx;
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    let cancelled = false;
+    (async () => {
       try {
-        const res = await fetch("http://localhost:5197/api/products");
-        if (res.ok) {
-          const data = await res.json();
-          const list = data?.$values ?? data;
-          const productsWithSizes = (Array.isArray(list) ? list : []).map(p => ({
-            ...p,
-            sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ["S", "M", "L"]
-          }));
-          setProducts(productsWithSizes);
-        }
+        const res = await api.get("/products");
+        const data = res.data;
+        const list = data?.$values ?? data ?? [];
+        const productsWithSizes = (Array.isArray(list) ? list : []).map((p) => ({
+          ...p,
+          sizes: Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : ["S", "M", "L"],
+        }));
+        if (!cancelled) setProducts(productsWithSizes);
       } catch (err) {
-        console.error("Failed to fetch products:", err);
+        if (!cancelled) console.error("Failed to fetch products:", err);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchProducts();
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     if (popupProduct) {
       setPopupQuantity(1);
       setPopupSize(popupProduct.sizes?.[0] || "");
@@ -68,9 +63,27 @@ function Cart() {
     : 0;
 
   const hasCartItems = Array.isArray(cartItems) && cartItems.length > 0;
+
   const handleCheckout = () => navigate("/checkout");
   const handleShopNow = () => navigate("/store");
-  const recommendedProducts = Array.isArray(products) ? products.slice(0, 6) : [];
+
+  
+  const makeFavoriteHandlers = (prod) => {
+    const pid = prod.id ?? prod.Id;
+    const isFav =
+      (isAuthenticated ? userWishlistCtx?.isInWishlist?.(pid) : guestWishlistCtx?.isInWishlist?.(pid)) || false;
+
+    const onClick = (e) => {
+      e?.stopPropagation?.();
+      if (isAuthenticated) {
+        isFav ? userWishlistCtx.removeFromWishlist(pid) : userWishlistCtx.addToWishlist(prod);
+      } else {
+        isFav ? guestWishlistCtx.removeFromWishlist(pid) : guestWishlistCtx.addToWishlist(prod);
+      }
+    };
+
+    return { isFav, onClick };
+  };
 
  return (
    <div style={{ minHeight: "100vh", width: "100%", paddingBottom: "160px", backgroundColor: "#f8f9fa", paddingTop: "80px" }}>

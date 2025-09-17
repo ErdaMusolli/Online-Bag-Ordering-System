@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import api, { API_ORIGIN } from "../../services/apiClient";
 
 const staticNews = [
   { id: 1, title: 'New Organic Products Launched', date: 'January 12, 2025', image: '/News1.jpg', link: '/news/1' },
@@ -9,34 +10,44 @@ const staticNews = [
 const DiscountProducts = () => {
   const [newsItems, setNewsItems] = useState(staticNews);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch('http://localhost:5197/api/news')
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch news');
-        return res.json();
-      })
-      .then((data) => {
-        const raw = data?.$values || data;
-        if (!Array.isArray(raw)) throw new Error('Invalid format');
-        const backend = raw.map(item => ({
+   useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const { data } = await api.get("/news");
+        const raw = Array.isArray(data?.$values) ? data.$values : data;
+        if (!Array.isArray(raw)) throw new Error("Invalid format");
+
+        const backend = raw.map((item) => ({
           id: item.id,
           title: item.title,
           description: item.content,
           date: item.datePublished,
-          image: item.imageUrl,
-          link: `/news/${item.id}`
+          image: item.imageUrl ? new URL(item.imageUrl, API_ORIGIN).href : "",
+          link: `/news/${item.id}`,
         }));
-        const merged = [
-          ...staticNews,
-          ...backend.filter(b => !staticNews.some(s => s.id === b.id))
-        ];
-        setNewsItems(merged);
-      })
-      .catch(err => setError(err.message));
+
+        const merged = [...staticNews];
+        backend.forEach((b) => {
+          if (!merged.some((s) => s.id === b.id)) merged.push(b);
+        });
+
+        if (alive) setNewsItems(merged);
+      } catch (err) {
+        if (alive) setError(err.message || "Failed to fetch news");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => { alive = false; };
   }, []);
 
-  if (error) return <div className="alert alert-danger text-center mt-5">Error: {error}</div>;
+  if (loading) return <div className="text-center mt-5">Loading…</div>;
+  if (error)   return <div className="alert alert-danger text-center mt-5">Error: {error}</div>;
 
   return (
     <div id="homeSlider" className="carousel slide mb-5" data-bs-ride="carousel">

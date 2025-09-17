@@ -7,28 +7,61 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
     {
+        policy.WithOrigins("https://localhost:5173", "http://localhost:5173") 
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
+var jwtKey = builder.Configuration["Jwt:Key"] 
+             ?? throw new InvalidOperationException("JWT key not configured");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = true;  
+        options.SaveToken = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-    Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] 
-        ?? throw new InvalidOperationException("JWT key not configured"))),
+            ClockSkew = TimeSpan.FromSeconds(15),
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = signingKey,
+            RoleClaimType = ClaimTypes.Role
+        };
 
-        RoleClaimType = ClaimTypes.Role
-
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+    {
+          if (string.IsNullOrEmpty(ctx.Token) &&
+            ctx.Request.Cookies.TryGetValue("access_token", out var cookieToken)) // <— match controller
+            {
+            ctx.Token = cookieToken;
+             }
+             return Task.CompletedTask;
+            }
         };
     });
+
 
 builder.Services.AddAuthorization();
 
@@ -46,8 +79,6 @@ builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<WishlistService>();
 
 
-
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -57,37 +88,35 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 });
 
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder => builder.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader());
-});
+builder.Services.AddAntiforgery();
+
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 1073741824; // 
+    options.MultipartBodyLengthLimit = 1073741824;
 });
 
 var app = builder.Build();
-app.UseCors("AllowAll");
-
-
-
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.UseStaticFiles();
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.None, 
+    Secure = CookieSecurePolicy.Always         
+});
+
+app.UseCors("Frontend");  
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 
 
 app.Run();

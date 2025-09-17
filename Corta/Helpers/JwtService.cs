@@ -17,15 +17,21 @@ namespace Corta.Helpers
             _configuration = configuration;
         }
 
-        public string GenerateToken(User user)
+        public (string accessToken, string jti, DateTimeOffset expires) CreateAccessToken(User user)
         {
-            var claims = new[]
+            var jti = Guid.NewGuid().ToString("N");
+            var expires = DateTimeOffset.UtcNow.AddMinutes(
+                int.TryParse(_configuration["Jwt:AccessTokenMinutes"], out var m) ? m : 5);
+
+             var claims = new[]
             {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, jti),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim("UserId", user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.Role ?? "User") 
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -38,20 +44,42 @@ namespace Corta.Helpers
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(5),
+                notBefore: DateTime.UtcNow,
+                expires: expires.UtcDateTime,
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+            return (accessToken, jti, expires);
         }
-        public string GenerateRefreshToken()
+       public (string raw, string hash, DateTimeOffset expires) CreateRefreshToken(User user, string jwtId)
         {
-            var randomBytes = new byte[64];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomBytes);
-                return Convert.ToBase64String(randomBytes);
-            }
+           byte[] random = RandomNumberGenerator.GetBytes(64);
+
+           var raw = Convert.ToBase64String(random)
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+
+            var hash = Sha256(raw);
+            var expires = DateTimeOffset.UtcNow.AddDays(
+                int.TryParse(_configuration["Jwt:RefreshTokenDays"], out var d) ? d : 14);
+
+            return (raw, hash, expires);
+        }
+
+        public string CreateCsrfToken()
+        {
+            byte[] random = new byte[32];
+            RandomNumberGenerator.Fill(random);
+            return Convert.ToBase64String(random);
+        }
+
+        public static string Sha256(string input)
+        {
+            using var sha = SHA256.Create();
+            var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+            return Convert.ToHexString(bytes);
         }
     }
 }

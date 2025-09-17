@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../../services/apiClient";
 
+  const getImageUrl = (url) => {
+  if (!url) return "/default-product.jpg";
+  if (url.startsWith("http")) return url;
+  return `https://localhost:7254${url.startsWith("/images/") ? url : `/images/${url}`}`;
+};
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -8,52 +14,38 @@ const Orders = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    const fetchOrders = async () => {
+    let canceled = false;
+    (async () => {
       try {
-        const response = await fetch("http://localhost:5197/api/purchase/my", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/login");
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Error fetching orders.");
-        }
-
-        const data = await response.json();
-
-        setOrders(data.$values || data);
+        const { data } = await api.get("/purchase/my"); 
+        const list = Array.isArray(data) ? data : data?.$values ?? [];
+        if (!canceled) setOrders(list);
       } catch (err) {
-        setError(err.message);
+        if (!canceled) {
+          if (err?.response?.status === 401) {
+            navigate("/login", { replace: true });
+          } else {
+            setError(err?.response?.data || err.message || "Error fetching orders.");
+          }
+        }
       } finally {
-        setLoading(false);
+        if (!canceled) setLoading(false);
       }
-    };
-
-    fetchOrders();
+    })();
+    return () => { canceled = true; };
   }, [navigate]);
 
-
   const ordersWithImages = useMemo(() => {
-    return orders.map((order) => ({
-      ...order,
-      firstImage: order.purchaseItems?.$values?.[0]?.productImageUrl || "/default-product.jpg",
-      displayStatus: order.status === "Completed" ? "Delivered" : order.status,
-    }));
+    return (orders || []).map((order) => {
+      const firstItem =
+        order?.purchaseItems?.$values?.[0] ??
+        (Array.isArray(order?.purchaseItems) ? order.purchaseItems[0] : undefined);
+      return {
+        ...order,
+        firstImage: firstItem?.productImageUrl || "/default-product.jpg",
+        displayStatus: order?.status === "Completed" ? "Delivered" : order?.status,
+      };
+    });
   }, [orders]);
 
   if (loading) {

@@ -44,28 +44,23 @@ namespace Corta.Services
             return user;
         }
 
-        public async Task<(string accessToken, string refreshToken)?> LoginWithTokensAsync(LoginDto dto, JwtService jwtService)
+       public async Task<RefreshToken?> FindRefreshByRawAsync(string rawToken)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return null;
-
-            var accessToken = jwtService.GenerateToken(user);
-            var refreshToken = jwtService.GenerateRefreshToken();
-
-            var refreshTokenEntity = new RefreshToken
-            {
-                Token = refreshToken,
-                ExpiresAt = DateTime.UtcNow.AddDays(7),
-                UserId = user.Id
-            };
-
-            _context.RefreshTokens.Add(refreshTokenEntity);
-            await _context.SaveChangesAsync();
-
-            return (accessToken, refreshToken);
+            var hash = JwtService.Sha256(rawToken);
+            return await _context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
         }
 
+        public async Task<bool> RevokeRefreshByRawAsync(string rawToken, string reason = "revoked")
+        {
+            var hash = JwtService.Sha256(rawToken);
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
+            if (token == null) return false;
+
+            token.RevokedAt = DateTimeOffset.UtcNow;
+            token.RevokeReason = reason;
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
         public async Task<List<User>> GetAllUsersAsync()
         {
@@ -85,7 +80,6 @@ namespace Corta.Services
             user.Username = dto.Username;
             user.Email = dto.Email;
             user.Role = dto.Role;
-
             user.BirthDate = dto.BirthDate;
             user.Gender = dto.Gender;
 
@@ -114,18 +108,6 @@ namespace Corta.Services
                 return null;
 
             return user.Purchases;
-        }
-        public async Task<bool> LogoutAsync(string refreshToken)
-        {
-            var token = await _context.RefreshTokens
-            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
-
-            if (token == null)
-                return false;
-
-            _context.RefreshTokens.Remove(token);
-            await _context.SaveChangesAsync();
-            return true;
         }
     }
 }

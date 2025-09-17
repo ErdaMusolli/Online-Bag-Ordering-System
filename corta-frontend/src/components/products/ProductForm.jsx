@@ -1,4 +1,5 @@
 import { useState } from "react";
+import api from "../../services/apiClient"; 
 
 const ProductForm = () => {
   const [formData, setFormData] = useState({
@@ -26,6 +27,9 @@ const ProductForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+     setError("");
+    setSuccess("");
+
     try {
       const data = new FormData();
       data.append("name", formData.name);
@@ -37,34 +41,22 @@ const ProductForm = () => {
         data.append("additionalImages", file);
       });
 
-      const response = await fetch("http://localhost:5197/api/products", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-        },
-        body: data,
-      });
+        await api.post("/products", data);
 
-      if (response.ok) {
-        setSuccess("Product added successfully!");
-        setError("");
-        setFormData({
-          name: "",
-          description: "",
-          price: "",
-          image: null,
-          additionalImages: [],
-        });
-      } else {
-        const err = await response.text();
-        setError("Failed to add product: " + err);
-        setSuccess("");
-      }
-    } catch (error) {
-      setError("Error connecting to the server.");
-      setSuccess("");
+      setSuccess("Product added successfully!");
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+        image: null,
+        additionalImages: [],
+      });
+    } catch (err) {
+      const msg = err?.response?.data || err?.message || "Failed to add product";
+      setError(typeof msg === "string" ? msg : "Failed to add product");
     }
   };
+
 
   return (
     <div className="container">

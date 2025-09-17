@@ -6,20 +6,26 @@ import UserMenu from '../shared/UserMenu';
 import { useWishlist } from '../../context/WishlistContext';
 import { useGuestWishlist } from '../../context/GuestWishlistContext';
 import { useCart } from "../../context/CartContext";
-import { jwtDecode } from 'jwt-decode';
-
-
-
+import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { isAuthenticated, user } = useAuth(); 
   const { wishlist: userWishlist } = useWishlist();
   const { wishlist: guestWishlist } = useGuestWishlist();
   const { cartCount } = useCart();
-  const token = localStorage.getItem("token");
-  const isAuthenticated = !!token;
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const navigate = useNavigate();
+  const isAdmin = (user?.role || "").toLowerCase() === "admin";
+  const wishlistCount = (isAuthenticated ? userWishlist : guestWishlist)?.length || 0;
+
+   const goWishlist = (e) => {
+    e.preventDefault();
+    if (!authReady) return;           
+    navigate(isAuthenticated ? "/profile/wishlist" : "/guest-wishlist");
+    closeNavbar();
+  };
 
   const handleSearch = (e) => {
   e.preventDefault();
@@ -31,26 +37,12 @@ const Navbar = () => {
 
   const closeNavbar = () => {
     const navbar = document.getElementById('navbarNav');
-    if (navbar) {
+    if (navbar && window.bootstrap?.Collapse) {
       const bsCollapse = new window.bootstrap.Collapse(navbar, { toggle: false });
       bsCollapse.hide();
     }
   };
-   const isInWishlist = (productId) =>
-    isAuthenticated
-      ? userWishlist.some(p => p.id === productId)
-      : guestWishlist.some(p => p.id === productId);
-
-      let isAdmin = false;
-    if (token) {
-    try {
-    const decoded = jwtDecode(token);
-    isAdmin = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] === 'admin';
-  } catch (err) {
-    console.error(err);
-  }
-}
-
+  
   return (
     <nav
   className="navbar navbar-expand-lg fixed-top"

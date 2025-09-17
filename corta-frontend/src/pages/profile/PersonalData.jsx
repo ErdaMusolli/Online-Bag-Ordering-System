@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { authFetch } from "../../services/authFetch";
-import { jwtDecode } from "jwt-decode";
-import { getNewAccessToken } from "../../services/tokenUtils";
+import api from "../../services/apiClient";  
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = "http://localhost:5197"; 
 
 const PersonalData = () => {
   const [form, setForm] = useState({
@@ -19,52 +15,43 @@ const PersonalData = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
 
-    useEffect(() => {
-    const checkToken = async () => {
-      let token = localStorage.getItem("token");
-
-      if (!token) {
-        token = await getNewAccessToken();
-        if (!token) {
-          navigate("/login", { replace: true });
-          return;
-        }
-      }
-
-      try {
-        jwtDecode(token); 
-      } catch (err) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        navigate("/login", { replace: true });
-      }
-    };
-
-    checkToken();
-  }, [navigate]);
-
 
   useEffect(() => {
-    async function fetchProfile() {
+    let cancelled = false;
+    (async () => {
       try {
-        const res = await authFetch(`${API_BASE}/api/users/me`);
-        if (!res.ok) throw new Error("Failed to load profile");
-        const data = await res.json();
+        const { data } = await api.get("/users/me"); 
+        if (cancelled) return;
+
+        const rawBirth = data.birthDate ?? data.BirthDate ?? "";
+        const birthDate =
+          typeof rawBirth === "string"
+            ? rawBirth.includes("T")
+              ? rawBirth.split("T")[0]
+              : rawBirth
+            : "";
+
         setForm({
-          username: data.username || "",
-          email: data.email || "",
-          birthDate: data.birthDate ? data.birthDate.split("T")[0] : "",
-          gender: data.gender || "",
+          username: data.username ?? data.Username ?? "",
+          email: data.email ?? data.Email ?? "",
+          birthDate,
+          gender: data.gender ?? data.Gender ?? "",
         });
       } catch (err) {
-        console.error(err);
-        setError("Could not load profile");
+        if (cancelled) return;
+        const msg = err?.response?.data || err.message || "Could not load profile";
+        setError(typeof msg === "string" ? msg : "Could not load profile");
+        if (err?.response?.status === 401) {
+          navigate("/login", { replace: true });
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    }
-    fetchProfile();
-  }, []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,20 +74,11 @@ const PersonalData = () => {
       gender: form.gender ? form.gender : null
     };
 
-      const res = await authFetch(`${API_BASE}/api/users/me`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || "Update failed");
-      }
-
+      await api.put("/users/me", payload); 
       setSuccess("Saved successfully ✅");
     } catch (err) {
-      console.error(err);
-      setError(err.message);
+      const msg = err?.response?.data || err.message || "Update failed";
+      setError(typeof msg === "string" ? msg : "Update failed");
     } finally {
       setSaving(false);
     }

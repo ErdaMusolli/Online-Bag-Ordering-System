@@ -2,20 +2,23 @@ import { useNavigate } from "react-router-dom";
 import React from "react";
 import { useWishlist } from "../../context/WishlistContext";
 import { useGuestWishlist } from "../../context/GuestWishlistContext";
+import { useAuth } from "../../context/AuthContext";
 
-const ASSET_HOST = "http://localhost:5197";
+const ASSET_HOST = "https://localhost:7254";
 
 function ProductItem({ product }) {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  const { isAuthenticated } = useAuth();
 
-  const wishlistContext = token ? useWishlist() : useGuestWishlist();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = wishlistContext;
+  const userW   = useWishlist();
+  const guestW  = useGuestWishlist();
 
-  const imagePath =
-    product.imageUrl && product.imageUrl.startsWith("http")
-      ? product.imageUrl
-      : `http://localhost:5197${product.imageUrl}`;
+  const { addToWishlist, removeFromWishlist, isInWishlist } =
+    isAuthenticated ? userW : guestW;
+
+   const imagePath = product?.imageUrl
+    ? (product.imageUrl.startsWith("http") ? product.imageUrl : `${ASSET_HOST}${product.imageUrl}`)
+    : "/placeholder.jpg";
 
   const handleWishlistClick = (e) => {
     e.stopPropagation();

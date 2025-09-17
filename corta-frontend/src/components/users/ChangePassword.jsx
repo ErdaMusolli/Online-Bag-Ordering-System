@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../services/apiClient';
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -43,29 +44,18 @@ const ChangePassword = () => {
     }
 
 
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('http://localhost:5197/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
+     try {
+      const res = await api.post('/auth/change-password', formData);
+      if (res.status === 200) {
         setMessage('Password changed successfully.');
         navigate('/login');
-      } else {
-        const err = await res.text();
-        setMessage(`Failed: ${err}`);
       }
     } catch (err) {
-      console.error(err);
-      setMessage('Something went wrong.');
+      const txt = err?.response?.data || 'Something went wrong.';
+      setMessage(`Failed: ${txt}`);
     }
   };
+
 
   return (
     <div

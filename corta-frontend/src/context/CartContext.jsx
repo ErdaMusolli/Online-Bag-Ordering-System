@@ -1,27 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { authFetch } from "../services/authFetch";
-import { getNewAccessToken } from "../services/tokenUtils";
+import api from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 const CartContext = createContext();
 export const useCart = () => useContext(CartContext);
 
 const GUEST_CART_KEY = "guest_cart";
-
-function getUserIdFromToken() {
-  const t = localStorage.getItem("token");
-  if (!t) return null;
-  try {
-    const p = JSON.parse(atob(t.split(".")[1]));
-    const raw =
-      p["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] ||
-      p["UserId"] ||
-      p["sub"];
-    const n = parseInt(raw, 10);
-    return Number.isFinite(n) ? n : null;
-  } catch {
-    return null;
-  }
-}
 
 function normalizeItem(it) {
   return {
@@ -37,56 +21,36 @@ function normalizeItem(it) {
 }
 
 export const CartProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const loadCart = async () => {
-      const uid = getUserIdFromToken();
-      const token = localStorage.getItem("token");
-      const refreshToken = localStorage.getItem("refreshToken");
+    let canceled = false;
 
-      if (!uid) {
-        const guestRaw =
-          localStorage.getItem(GUEST_CART_KEY) ??
-          localStorage.getItem("cart_guest");
-        const guestSaved = guestRaw ? JSON.parse(guestRaw) : [];
-        if (Array.isArray(guestSaved) && guestSaved.length) {
-          setCartItems(guestSaved.map(normalizeItem));
+      const loadCart = async () => {
+      if (!isAuthenticated) {
+        
+      try {
+          const raw =
+            localStorage.getItem(GUEST_CART_KEY) ??
+            localStorage.getItem("cart_guest"); 
+          const parsed = raw ? JSON.parse(raw) : [];
+          if (!canceled && Array.isArray(parsed) && parsed.length) {
+            setCartItems(parsed.map(normalizeItem));
+          } else if (!canceled) {
+            setCartItems([]);
+          }
+        } catch {
+          if (!canceled) setCartItems([]);
+        } finally {
+          if (!canceled) setHydrated(true);
         }
-      }
-
-      if (!token && !refreshToken) {
-        setHydrated(true);
         return;
       }
 
       try {
-        let res = await authFetch("http://localhost:5197/api/cart", { method: "GET" });
-
-        if (res?.status === 401) {
-          const newTok = await getNewAccessToken();
-          if (!newTok) {
-            setHydrated(true);
-            return;
-          }
-          res = await fetch("http://localhost:5197/api/cart", {
-            headers: { Authorization: `Bearer ${newTok}` },
-          });
-        }
-
-        if (!res?.ok) {
-          setHydrated(true);
-          return;
-        }
-
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          setHydrated(true);
-          return;
-        }
-
-        const data = await res.json();
+      const { data } = await api.get("/cart");
         const raw =
           Array.isArray(data) ? data
           : Array.isArray(data?.items) ? data.items
@@ -95,28 +59,33 @@ export const CartProvider = ({ children }) => {
           : Array.isArray(data?.Items?.$values) ? data.Items.$values
           : Array.isArray(data?.$values) ? data.$values
           : [];
-        setCartItems(raw.map(normalizeItem));
+       if (!canceled) setCartItems(raw.map(normalizeItem));
       } catch (e) {
-        console.error("Cart GET error:", e);
+        if (!canceled) console.error("Cart GET error:", e);
       } finally {
-        setHydrated(true);
+        if (!canceled) setHydrated(true);
       }
     };
 
     loadCart();
-  }, []);
+  return () => {
+      canceled = true;
+    };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!hydrated) return;
-    const uid = getUserIdFromToken();
-    if (!uid) localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartItems));
-  }, [cartItems, hydrated]);
+    if (!isAuthenticated) {
+      try {
+      localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartItems));
+    } catch {
+    }
+   }
+  }, [cartItems, hydrated,isAuthenticated]);
 
   const cartCount = cartItems.reduce((sum, i) => sum + (i.quantity || 0), 0);
 
   const addToCart = async (product, quantity = 1, variant = "") => {
-    const uid = getUserIdFromToken();
-
     setCartItems((prev) => {
       const found = prev.find((i) => i.productId === product.id && i.variant === variant);
       return found
@@ -140,40 +109,36 @@ export const CartProvider = ({ children }) => {
           ];
     });
 
-    if (!uid) return;
+    if (!isAuthenticated) return;
 
     try {
-      const res = await authFetch("http://localhost:5197/api/cart/items", {
-        method: "POST",
-        body: JSON.stringify({ ProductId: product.id, Quantity: quantity, Variant: variant }),
+      await api.post("/cart/items", {
+        productId: product.id,
+        quantity,
+        size: variant,
       });
-      if (!res.ok) console.error("Cart POST failed:", res.status, await res.text());
     } catch (e) {
-      console.error("Cart add error:", e);
+      console.error("Cart POST failed:", e);
     }
   };
 
-  const removeFromCart = async (productId, variant = "") => {
-    const uid = getUserIdFromToken();
 
+  const removeFromCart = async (productId, variant = "") => {
     setCartItems((prev) =>
       prev.filter((i) => !(i.productId === productId && (variant ? i.variant === variant : true)))
     );
 
-    if (!uid) return;
+    if (!isAuthenticated) return;
 
     try {
-      const res = await authFetch(`http://localhost:5197/api/cart/items/${productId}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) console.error("Cart DELETE failed:", res.status, await res.text());
+     await api.delete(`/cart/items/${productId}`);
     } catch (e) {
-      console.error("Cart remove error:", e);
+      console.error("Cart DELETE failed:", e);
     }
   };
 
   const updateQuantity = async (productId, quantity, variant = "") => {
-    const uid = getUserIdFromToken();
+    quantity = Math.max(0, Number(quantity) || 0);
 
     setCartItems((prev) =>
       prev.map((i) =>
@@ -183,39 +148,27 @@ export const CartProvider = ({ children }) => {
       )
     );
 
-    if (!uid) return;
-
-    try {
-      await authFetch(`http://localhost:5197/api/cart/items/${productId}`, { method: "DELETE" });
-      if (quantity > 0) {
-        await authFetch("http://localhost:5197/api/cart/items", {
-          method: "POST",
-          body: JSON.stringify({ ProductId: productId, Quantity: quantity, Variant: variant }),
-        });
-      }
-    } catch (e) {
-      console.error("Cart updateQuantity error:", e);
-    }
+    if (quantity === 0) {
+       await api.delete(`/cart/items/${productId}`);
+     } else {
+       await api.post("/cart/items", { productId, quantity, size: variant });
+     }
   };
 
   const clearCart = async () => {
-    const uid = getUserIdFromToken();
-
     setCartItems([]);
-    if (!uid) {
-      localStorage.removeItem(GUEST_CART_KEY);
+
+    if (!isAuthenticated) {
+      try {
+        localStorage.removeItem(GUEST_CART_KEY);
+      } catch {}
       return;
     }
 
      try {
-      const res = await authFetch("http://localhost:5197/api/cart", {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        console.error("Cart clear failed:", res.status, await res.text());
-      }
+      await api.delete("/cart");
     } catch (e) {
-      console.error("Cart clear error:", e);
+      console.error("Cart clear failed:", e);
     }
   };
 

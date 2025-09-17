@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../services/authFetch';
-import { getNewAccessToken } from '../services/tokenUtils';
+import api from "../services/apiClient";
+
+const API_HOST = "https://localhost:7254"; 
 
 const staticNews = [
   {
@@ -41,6 +42,21 @@ const staticNews = [
   },
 ];
 
+const getImgUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/images/")) return `${API_HOST}${url}`;
+  return url; 
+};
+const normalizeNews = (item) => ({
+  id: item.id,
+  title: item.title,
+  content: item.content,
+  datePublished: item.datePublished,
+  imageUrl: getImgUrl(item.imageUrl),
+  source: item.source || "backend",
+});
+
 const ManageNews = () => {
   const navigate = useNavigate();
 
@@ -54,59 +70,39 @@ const ManageNews = () => {
   const [editNewsFile, setEditNewsFile] = useState(null);
 
   useEffect(() => {
-    const fetchBackendNews = async () => {
-      let token = localStorage.getItem('token');
-      if (!token) {
-        token = await getNewAccessToken();
-        if (!token) return navigate('/login');
-      }
-
+    let cancelled = false;
+    (async () => {
       try {
-        const res = await authFetch('http://localhost:5197/api/news');
-        if (!res.ok) throw new Error('Failed to fetch news');
-        const data = await res.json();
-        const backendNewsArray = data.$values || data;
+        const { data } = await api.get("/news");
+        const raw = Array.isArray(data) ? data : data?.$values ?? [];
+        const backend = raw.map(normalizeNews);
 
-        const backendNews = backendNewsArray.map(item => ({
-          id: item.id,
-          title: item.title,
-          content: item.content,
-          datePublished: item.datePublished,
-          imageUrl: item.imageUrl ? `http://localhost:5197${item.imageUrl}` : '',
-        }));
-
-        const mergedNews = [...staticNews];
-        backendNews.forEach(item => {
-          if (!mergedNews.find(n => n.id === item.id)) mergedNews.push(item);
+        const merged = [...staticNews.map((s) => ({ ...s, imageUrl: getImgUrl(s.imageUrl) }))];
+        backend.forEach((b) => {
+          if (!merged.find((n) => n.id === b.id)) merged.push(b);
         });
 
-        setNewsItems(mergedNews);
-      } catch (error) {
-        console.error(error);
+        if (!cancelled) setNewsItems(merged);
+      } catch (err) {
+        console.error("Failed to fetch news:", err?.response?.status || err?.message);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-
-    fetchBackendNews();
   }, [navigate]);
 
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this news item?')) return;
+   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this news item?")) return;
     try {
-      let token = localStorage.getItem('token');
-      if (!token) token = await getNewAccessToken();
-      if (!token) return navigate('/login');
-
-      const res = await fetch(`http://localhost:5197/api/news/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (res.ok) setNewsItems(newsItems.filter(n => n.id !== id));
-    } catch (error) { console.error(error); }
+      await api.delete(`/news/${id}`);
+      setNewsItems((prev) => prev.filter((n) => n.id !== id));
+    } catch (err) {
+      console.error("Delete failed:", err?.response?.status || err?.message);
+      alert("Delete failed");
+    }
   };
 
-  // Open edit modal
   const openEditModal = (news) => {
     setEditingNews(news);
     setEditForm({
@@ -119,64 +115,53 @@ const ManageNews = () => {
   };
 
   const handleUpdate = async () => {
+    if (!editingNews) return;
     try {
-      let token = localStorage.getItem('token');
-      if (!token) token = await getNewAccessToken();
-      if (!token) return navigate('/login');
+      const fd = new FormData();
+      fd.append("title", editForm.title);
+      fd.append("content", editForm.content);
+      fd.append("datePublished", editForm.datePublished || "");
+      if (editNewsFile) fd.append("image", editNewsFile);
 
-      const formData = new FormData();
-      formData.append('title', editForm.title);
-      formData.append('content', editForm.content);
-      formData.append('datePublished', editForm.datePublished);
-      if (editNewsFile) formData.append('image', editNewsFile);
+      await api.put(`/news/${editingNews.id}`, fd); 
 
-      const res = await fetch(`http://localhost:5197/api/news/${editingNews.id}`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
+      const { data } = await api.get("/news");
+      const backend = (Array.isArray(data) ? data : data?.$values ?? []).map(normalizeNews);
+
+      const merged = [...staticNews.map((s) => ({ ...s, imageUrl: getImgUrl(s.imageUrl) }))];
+      backend.forEach((b) => {
+        if (!merged.find((n) => n.id === b.id)) merged.push(b);
       });
 
-      if (res.ok) {
-        const updatedNewsList = await (await authFetch('http://localhost:5197/api/news')).json();
-        setNewsItems(updatedNewsList);
-        setEditingNews(null);
-      } else {
-        alert('Update failed');
-      }
-    } catch (error) {
-      console.error(error);
+      setNewsItems(merged);
+      setEditingNews(null);
+    } catch (err) {
+      console.error("Update failed:", err?.response?.status || err?.message);
+      alert("Update failed");
     }
   };
-
 
   const handleAdd = async () => {
     if (!newNews.title.trim()) { alert('Title is required'); return; }
 
-    try {
-      let token = localStorage.getItem('token');
-      if (!token) token = await getNewAccessToken();
-      if (!token) return navigate('/login');
+     try {
+      const fd = new FormData();
+      fd.append("title", newNews.title);
+      fd.append("content", newNews.content);
+      fd.append("datePublished", newNews.datePublished || "");
+      if (newNewsFile) fd.append("image", newNewsFile);
 
-      const formData = new FormData();
-      formData.append('title', newNews.title);
-      formData.append('content', newNews.content);
-      formData.append('datePublished', newNews.datePublished);
-      if (newNewsFile) formData.append('image', newNewsFile);
+      const { data: created } = await api.post("/news", fd);
 
-      const res = await fetch('http://localhost:5197/api/news', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      const createdNorm = normalizeNews(created || {});
+      setNewsItems((prev) => [...prev, createdNorm]);
 
-      if (res.ok) {
-        const addedNews = await res.json();
-        setNewsItems([...newsItems, addedNews]);
-        setShowAddModal(false);
-        setNewNewsFile(null);
-      } else alert('Adding news failed');
-    } catch (error) {
-      console.error('Add news error', error);
+      setShowAddModal(false);
+      setNewNewsFile(null);
+      setNewNews({ title: "", content: "", datePublished: "", imageUrl: "" });
+    } catch (err) {
+      console.error("Add news error:", err?.response?.status || err?.message);
+      alert("Adding news failed");
     }
   };
 

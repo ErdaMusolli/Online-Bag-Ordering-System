@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNewAccessToken } from '../services/tokenUtils';
-import { authFetch } from '../services/authFetch';
-
+import api from "../services/apiClient"; 
 
 const ManageUsers = () => {
   const navigate = useNavigate();
@@ -13,49 +11,36 @@ const ManageUsers = () => {
   const [roleFilter, setRoleFilter] = useState('');
 
   useEffect(() => {
-    const checkAndFetchUsers = async () => { 
-      let token = localStorage.getItem('token');
+    let cancelled = false;
 
-      if (!token) {
-        token = await getNewAccessToken();
-        if (!token) {
-          navigate('/login'); 
-          return;
-        }
+    const fetchUsers = async () => {
+      try {
+        const { data } = await api.get("/users");
+        const list = Array.isArray(data?.$values) ? data.$values : Array.isArray(data) ? data : [];
+        if (!cancelled) setUsers(list);
+      } catch (err) {
+        if (err?.response?.status === 401) navigate("/login", { replace: true });
+        console.error("Error fetching users:", err?.response?.status || err?.message);
+        if (!cancelled) setUsers([]);
       }
-    try {
-      const res = await authFetch('http://localhost:5197/api/users');
-      if (!res.ok) throw new Error('Failed to fetch users');
+    };
 
-      const data = await res.json();
-      setUsers(Array.isArray(data.$values) ? data.$values : []);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
-
-  checkAndFetchUsers();
+    fetchUsers();
+    return () => { cancelled = true; };
   }, [navigate]);
 
+
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this user?");
-    if (!confirmDelete) return;
-
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      const token = localStorage.getItem('token');
-      const res = await authFetch(`http://localhost:5197/api/users/${id}`, {
-      method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setUsers(users.filter((u) => u.id !== id));
-      } else {
-        alert('Delete failed');
-      }
+      await api.delete(`/users/${id}`);
+      setUsers((u) => u.filter((x) => x.id !== id));
     } catch (err) {
-      console.error('Delete error', err);
+      console.error("Delete error:", err?.response?.status || err?.message);
+      alert("Delete failed");
     }
   };
+
 
   const openEditModal = (user) => {
     setEditingUser(user);
@@ -66,32 +51,22 @@ const ManageUsers = () => {
     });
   };
 
-  const handleUpdate = async () => {
+ const handleUpdate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await authFetch(`http://localhost:5197/api/users/${editingUser.id}`, {
-         method: 'PUT',
-         headers: {
-        'Content-Type': 'application/json',
-        },
-       body: JSON.stringify(editForm),
-    });
-
-      if (res.ok) {
-        setUsers(users.map((u) => u.id === editingUser.id ? { ...u, ...editForm } : u));
-        setEditingUser(null);
-      } else {
-        alert('Update failed');
-      }
+      await api.put(`/users/${editingUser.id}`, editForm);
+      setUsers((u) => u.map((x) => (x.id === editingUser.id ? { ...x, ...editForm } : x)));
+      setEditingUser(null);
     } catch (err) {
-      console.error('Update error', err);
+      console.error("Update error:", err?.response?.status || err?.message);
+      alert("Update failed");
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    (user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (roleFilter === '' || user.role === roleFilter)
+  const filteredUsers = users.filter(
+    (user) =>
+      (user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (roleFilter === "" || user.role === roleFilter)
   );
 
   return (

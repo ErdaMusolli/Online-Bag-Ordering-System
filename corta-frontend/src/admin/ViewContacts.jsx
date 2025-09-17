@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../services/authFetch';
-import { getNewAccessToken } from '../services/tokenUtils';
+import api from "../services/apiClient"; 
 
 const ViewContacts = () => {
   const navigate = useNavigate();
@@ -13,63 +12,34 @@ const ViewContacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchMessages = async () => {
-    let token = localStorage.getItem('token');
-
-    if (!token) {
-      token = await getNewAccessToken();
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-    }
-
+    setLoading(true);
     try {
-      const res = await authFetch("http://localhost:5197/api/contactmessages");
-      if (!res.ok) throw new Error("Failed to fetch contact messages");
-
-      const data = await res.json();
-      setMessages(data.$values || []);
+      const { data } = await api.get("/contactmessages");
+      const list = Array.isArray(data?.$values) ? data.$values : Array.isArray(data) ? data : [];
+      setMessages(list);
     } catch (err) {
-      console.error("Error fetching messages:", err);
+      if (err?.response?.status === 401) navigate("/login", { replace: true });
+      console.error("Error fetching messages:", err?.response?.status || err?.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const deleteMessage = async (id) => {
+
+ const deleteMessage = async (id) => {
     if (!window.confirm("Are you sure you want to delete this message?")) return;
-
     try {
-      let token = localStorage.getItem('token');
-      if (!token) {
-        token = await getNewAccessToken();
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-      }
-
-      const res = await fetch(`http://localhost:5197/api/contactmessages/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (res.ok) {
-        setMessages(messages.filter((msg) => msg.id !== id));
-      } else {
-        alert("Failed to delete message");
-      }
+      await api.delete(`/contactmessages/${id}`);
+      setMessages((prev) => prev.filter((m) => m.id !== id));
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error("Delete error:", err?.response?.status || err?.message);
+      alert("Failed to delete message");
     }
   };
 
   useEffect(() => {
     fetchMessages();
   }, []);
-
   const filteredMessages = messages.filter((m) =>
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );

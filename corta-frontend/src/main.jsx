@@ -5,10 +5,13 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import './index.css';
 
 import App from './App.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
 
 const root = createRoot(document.getElementById('root'));  
 root.render(
   <StrictMode>
-    <App />
+   <AuthProvider>
+      <App />
+    </AuthProvider>
   </StrictMode>
 );

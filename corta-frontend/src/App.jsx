@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { tryRefreshOnBoot } from './services/authService';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import api from './services/apiClient'; 
 import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
@@ -43,13 +45,10 @@ import PaymentMethods from "./pages/faq/PaymentMethods";
 import { GuestWishlistProvider } from './context/GuestWishlistContext';
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const WishlistWrapper = () => {
-  const token = localStorage.getItem("token");
-  if (!token) return <Navigate to="/guest-wishlist" replace />;
-  return <Wishlist />;
-};
-
 function AppContent() {
+  const [authReady, setAuthReady] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); 
+  const [user, setUser] = useState(null);                       
   const location = useLocation();
   const hideLayout = location.pathname.startsWith('/admin');
 
@@ -57,12 +56,35 @@ function AppContent() {
   const [cartItems, setCartItems] = useState([]);
   const [showContactModal, setShowContactModal] = useState(false);
 
-  useEffect(() => {
-    fetch("http://localhost:5197/api/products")
-      .then(res => res.json())
-      .then(setProducts)
-      .catch(console.error);
-  }, []);
+ const WishlistWrapper = () => {
+    if (!authReady) return null;       
+    if (!isAuthenticated) return <Navigate to="/guest-wishlist" replace />;
+    return <Wishlist />;
+  };
+
+   useEffect(() => {
+  (async () => {
+    let ok = false;
+    try {
+      ok = await tryRefreshOnBoot();      
+    } catch {}
+
+    if (ok) {
+      try {
+        const res = await api.get("/auth/me");
+        setUser(res.data);
+        setIsAuthenticated(true);
+      } catch {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    } else {
+      setUser(null);
+      setIsAuthenticated(false);
+    }
+    setAuthReady(true);
+  })();
+}, []);
 
   const addToCart = (product, quantity = 1, size = "S") => {
     const productToAdd = { ...product, quantity, productId: product.id, size };
@@ -103,15 +125,14 @@ function AppContent() {
         <Route path="/news/3" element={<News3 />} />
         <Route path="/news/4" element={<News4 />} />
         <Route path="/news/5" element={<News5 />} />
-        <Route path="/profile" element={<ProfileLayout />}>
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                 <ProfileLayout />
-              </ProtectedRoute>
-            }
-          ></Route>
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfileLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<PersonalData />} />
           <Route path="personal-data" element={<PersonalData />} />
           <Route path="orders" element={<Orders />} />
@@ -121,14 +142,63 @@ function AppContent() {
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
 
-        <Route path="/guest-wishlist" element={<GuestWishlist onAddToCart={addToCart} />}/>
-        <Route path="/admin" element={<ProtectedRoute role="admin"><DashboardAdmin /></ProtectedRoute>} />
-        <Route path="/manage-users" element={<ProtectedRoute role="admin"><ManageUsers /></ProtectedRoute>} />
-        <Route path="/manage-products" element={<ProtectedRoute role="admin"><ManageProducts /></ProtectedRoute>} />
-        <Route path="/manage-purchases" element={<ProtectedRoute role="admin"><ManagePurchases /></ProtectedRoute>} />
-        <Route path="/manage-news" element={<ProtectedRoute role="admin"><ManageNews /></ProtectedRoute>} />
-        <Route path="/view-contact" element={<ProtectedRoute role="admin"><ViewContacts /></ProtectedRoute>} />
-        <Route path="/view-reviews" element={<ProtectedRoute role="admin"><ViewReviews /></ProtectedRoute>} />
+       <Route path="/guest-wishlist" element={<GuestWishlist onAddToCart={addToCart} />}/>
+          <Route
+    path="/admin"
+    element={
+      <ProtectedRoute role="admin">
+        <DashboardAdmin />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-users"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageUsers />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-products"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageProducts />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-purchases"
+    element={
+      <ProtectedRoute role="admin">
+        <ManagePurchases />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/manage-news"
+    element={
+      <ProtectedRoute role="admin">
+        <ManageNews />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/view-contact"
+    element={
+      <ProtectedRoute role="admin">
+        <ViewContacts />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/view-reviews"
+    element={
+      <ProtectedRoute role="admin">
+        <ViewReviews />
+      </ProtectedRoute>
+    }
+  />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/refund" element={<RefundPolicy />} />

@@ -2,13 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import ProductList from "../components/products/ProductList";
 import { useWishlist } from "../context/WishlistContext";
 import { useLocation } from "react-router-dom";
-
+import api from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 function Store({ cart = [], setCart = () => {} }) {
   const [products, setProducts] = useState([]);
   const [sortOrder, setSortOrder] = useState("");
-  const [token, setToken] = useState(null);
-
+ 
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const location = useLocation();
 
@@ -17,32 +17,27 @@ function Store({ cart = [], setCart = () => {} }) {
   const category = (qs.get("category") || "").toLowerCase(); 
   const fabric   = (qs.get("fabric")   || "").toLowerCase();
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    if (savedToken) setToken(savedToken);
-  }, []);
-
  useEffect(() => {
     const controller = new AbortController();
-
     (async () => {
       try {
-        const url = new URL("http://localhost:5197/api/products");
-        if (category) url.searchParams.set("category", category);
-        if (fabric)   url.searchParams.set("fabric", fabric);
-
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error("Failed to fetch products");
-
-        const data = await res.json();
+        const res = await api.get("/products", {
+          signal: controller.signal,
+          params: {
+            ...(category ? { category } : {}),
+            ...(fabric ? { fabric } : {}),
+          },
+        });
+        const data = res.data;
         const arr = data.$values || data.products || data || [];
         setProducts(arr);
       } catch (err) {
-        if (err.name !== "AbortError") console.error(err);
+        if (err.name !== "CanceledError" && err.name !== "AbortError") {
+          console.error(err);
+        }
         setProducts([]);
       }
     })();
-
     return () => controller.abort();
   }, [category, fabric]);
 
@@ -96,40 +91,33 @@ const productsWithBadges = useMemo(() => {
   return arr;
 }, [sorted, location.state, searchTerm, category]);
 
-
-
-  const handleAddToCart = (product, quantity = 1, size = "S") => {
+ const handleAddToCart = async (product, quantity = 1, size = "S") => {
     if (product.stock <= 0) return;
-    const productToAdd = { ...product, quantity, size, productId: product.id };
 
-    if (token) {
-      return fetch("http://localhost:5197/api/cart/items", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: product.id, quantity, size }),
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to add to cart");
-          const existing = cart.find((i) => i.productId === product.id && i.size === size);
-          const updated = existing
-            ? cart.map((i) =>
-                i.productId === product.id && i.size === size
-                  ? { ...i, quantity: i.quantity + quantity }
-                  : i
-              )
-            : [...cart, productToAdd];
-          setCart(updated);
-          return updated;
-        })
-        .catch(console.error);
+     const productToAdd = { ...product, quantity, size, productId: pid, price };
+
+    if (isAuthenticated) {
+      try {
+        await api.post("/cart/items", { productId: pid, quantity, size }); 
+        const existing = cart.find((i) => i.productId === pid && i.size === size);
+        const updated = existing
+          ? cart.map((i) =>
+              i.productId === pid && i.size === size
+                ? { ...i, quantity: i.quantity + quantity }
+                : i
+            )
+          : [...cart, productToAdd];
+        setCart(updated);
+        return updated;
+      } catch (err) {
+        console.error("Failed to add to cart", err);
+        return;
+      }
     } else {
-      const existing = cart.find((i) => i.productId === product.id && i.size === size);
+      const existing = cart.find((i) => i.productId === pid && i.size === size);
       const updated = existing
         ? cart.map((i) =>
-            i.productId === product.id && i.size === size
+            i.productId === pid && i.size === size
               ? { ...i, quantity: i.quantity + quantity }
               : i
           )
@@ -139,7 +127,7 @@ const productsWithBadges = useMemo(() => {
         "guest_cart",
         JSON.stringify(updated.map(({ productId, ...rest }) => ({ id: productId, ...rest })))
       );
-      return Promise.resolve(updated);
+      return updated;
     }
   };
 

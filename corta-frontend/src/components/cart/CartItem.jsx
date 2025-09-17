@@ -1,13 +1,17 @@
 import React from "react";
 
+const ASSET_HOST = "https://localhost:7254";
 const getImageUrl = (url) => {
-  if (!url) return "/placeholder.jpg"; 
-  if (url.startsWith("http")) return url; 
-  if (url.startsWith("/images/")) return `http://localhost:5197${url}`;
-  return `http://localhost:5197/images/${url}`;
-};
+  if (!url) return "/placeholder.jpg";
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("/images/")) return `${ASSET_HOST}${url}`;
+  return `${ASSET_HOST}/images/${url}`;
+};;
 
 function CartItem({ item, onRemove, onQuantityChange, fromWishlist = false, toggleWishlist }) {
+  const size = item?.variant ?? item?.size ?? "S";
+  const quantity = Number(item?.quantity ?? 1);
+
   const handleDecrease = () => {
     if (item.quantity > 1) {
       onQuantityChange(item.productId, item.size, item.quantity - 1);
@@ -16,6 +20,10 @@ function CartItem({ item, onRemove, onQuantityChange, fromWishlist = false, togg
 
   const handleIncrease = () => {
     onQuantityChange(item.productId, item.size, item.quantity + 1);
+  };
+  
+ const handleRemove = () => {
+    onRemove?.(item.productId, size);
   };
 
    return (

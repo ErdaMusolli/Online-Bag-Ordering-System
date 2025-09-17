@@ -1,98 +1,65 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { authFetch } from '../services/authFetch';
-import { getNewAccessToken } from '../services/tokenUtils';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../services/apiClient"; 
 
+const ASSET_HOST = "https://localhost:7254";
 const getImageUrl = (url) =>
-  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
+  url ? (url.startsWith("http") ? url : `${ASSET_HOST}${url}`) : "/placeholder.jpg";
 
 const ViewReviews = () => {
   const navigate = useNavigate();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchReviewsAndProducts = async () => {
-    let token = localStorage.getItem('token');
+ const fetchReviewsAndProducts = async () => {
+  setLoading(true);
+  try {
+    const res = await api.get("/reviews");
+    const data = res.data;
+    const raw = Array.isArray(data?.$values) ? data.$values : Array.isArray(data) ? data : [];
 
-    if (!token) {
-      token = await getNewAccessToken();
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-    }
+    const rows = raw.map((r) => {
+      const img = r.productImageUrl ?? r.ProductImageUrl ?? null;
+      return {
+        id: r.id ?? r.Id,
+        productId: r.productId ?? r.ProductId,
+        rating: r.rating ?? r.Rating,
+        comment: r.comment ?? r.Comment,
+        userEmail: r.userEmail ?? r.UserEmail,
+        createdAt: r.createdAt ?? r.CreatedAt,
+        productImageUrl: img ? (img.startsWith("http") ? img : getImageUrl(img)) : null,
+      };
+    });
 
-    try {
-      
-      const reviewsRes = await authFetch('http://localhost:5197/api/reviews');
-      if (!reviewsRes.ok) throw new Error('Failed to fetch reviews');
-      const reviewsData = await reviewsRes.json();
-      const reviewsArray = reviewsData.$values || reviewsData || [];
+    setReviews(rows);
+  } catch (err) {
+    if (err?.response?.status === 401) navigate("/login", { replace: true });
+    console.error("Error fetching reviews:", err?.response?.status || err?.message);
+    setReviews([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
-      const productsRes = await authFetch('http://localhost:5197/api/products');
-      if (!productsRes.ok) throw new Error('Failed to fetch products');
-      const productsData = await productsRes.json();
-      const productsArray = productsData.$values || productsData || [];
+useEffect(() => {
+  fetchReviewsAndProducts();
+}, []);
 
-      const reviewsWithImages = reviewsArray.map((rev) => {
-        const product = productsArray.find((p) => p.id === rev.productId);
-        return {
-          id: rev.id,
-          productId: rev.productId,
-          rating: rev.rating,
-          comment: rev.comment, 
-          userEmail: rev.userEmail,
-          createdAt: rev.createdAt,
-          productImageUrl: product ? getImageUrl(product.imageUrl) : null,
-        };
-      });
-
-      setReviews(reviewsWithImages);
-      console.log("Reviews me comment:", reviewsWithImages);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this review?')) return;
-
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
     try {
-      let token = localStorage.getItem('token');
-      if (!token) {
-        token = await getNewAccessToken();
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-      }
-
-      const res = await fetch(`http://localhost:5197/api/reviews/${id}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        setReviews(reviews.filter((r) => r.id !== id));
-      } else {
-        alert('Delete failed');
-      }
-    } catch (error) {
-      console.error('Delete error:', error);
+      await api.delete(`/reviews/${id}`);
+      setReviews((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      console.error("Delete error:", err?.response?.status || err?.message);
+      alert("Delete failed");
     }
   };
 
-  useEffect(() => {
-    fetchReviewsAndProducts();
-  }, []);
-
   const filteredReviews = reviews.filter((r) =>
-    r.userEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+    (r.userEmail || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

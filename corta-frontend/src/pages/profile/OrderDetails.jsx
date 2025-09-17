@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../../services/apiClient";
 
 const OrderDetails = () => {
   const navigate = useNavigate();
@@ -9,53 +10,48 @@ const OrderDetails = () => {
   const [loadingCancel, setLoadingCancel] = useState(false);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchOrder = async () => {
+   useEffect(() => {
+    let canceled = false;
+    (async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("You are not authenticated");
-
-        const res = await fetch(`http://localhost:5197/api/purchase/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch order");
-
-        const data = await res.json();
-        setOrder(data);
+       const res = await api.get(`/purchase/${id}`); 
+        if (!canceled) setOrder(res.data);
       } catch (err) {
-        setError(err.message);
+        if (!canceled) {
+          if (err?.response?.status === 401) {
+            setError("Session expired. Please login again.");
+            navigate("/login", { replace: true });
+          } else {
+            setError(err?.response?.data || err.message || "Failed to fetch order");
+          }
+        }
       } finally {
-        setLoading(false);
+        if (!canceled) setLoading(false);
       }
+    })();
+    return () => {
+      canceled = true;
     };
+  }, [id, navigate]);
 
-    fetchOrder();
-  }, [id]);
 
   const handleCancelOrder = async () => {
     if (!window.confirm("Are you sure you want to cancel this order?")) return;
     setLoadingCancel(true);
     setError(null);
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("You are not authenticated");
-
-      const response = await fetch(`http://localhost:5197/api/purchase/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to cancel order");
-      }
-
+     try {
+      await api.delete(`/purchase/${id}`);
       alert("Order cancelled successfully");
       navigate(-1);
     } catch (err) {
-      setError(err.message);
+      const msg = err?.response?.data?.error || err?.response?.data || err.message || "Failed to cancel order";
+      if (err?.response?.status === 401) {
+        setError("Session expired. Please login again.");
+        navigate("/login", { replace: true });
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoadingCancel(false);
     }

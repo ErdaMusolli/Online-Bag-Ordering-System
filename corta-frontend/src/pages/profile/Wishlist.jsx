@@ -1,10 +1,13 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
+import { API_ORIGIN } from "../../services/apiClient";
 
 const getImageUrl = (url) =>
-  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
-
+  !url ? "/placeholder.jpg"
+  : url.startsWith("http") ? url
+  : new URL(url, API_ORIGIN).href;
+  
 const Wishlist = () => {
   const { wishlist, removeFromWishlist } = useWishlist();
   const { cartItems, addToCart } = useCart();

@@ -1,55 +1,59 @@
 import { useState } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../../services/authService'; 
+import { useAuth } from "../../context/AuthContext";
 import 'bootstrap/dist/css/bootstrap.min.css';
+
+const getRole = (u) => {
+  if (!u) return "";
+  const claimsUrl = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+  let r =
+    u.role ??
+    u.Role ??
+    u.userRole ??
+    u.UserRole ??
+    u.roleName ??
+    u.RoleName ??
+    u[claimsUrl] ??
+    u.roles ??
+    u.Roles;
+  if (Array.isArray(r)) r = r[0];
+  return (r || "").toString().toLowerCase();
+};
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { refresh, user } = useAuth(); 
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
 
-    try {
-      const response = await fetch('http://localhost:5197/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+    setError('');
+    setSuccess('');
+    setSubmitting(true);
 
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('refreshToken', data.refreshToken);
-        setSuccess('Login successful!');
-        setError('');
+   try {
+      await login(formData.email, formData.password);
+     
+      const me = await refresh();         
+      const role = getRole(me ?? user);
 
-      const decoded = jwtDecode(data.token);
-       console.log("JWT Decoded:", decoded);
-
-        const role =
-          decoded[
-            'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
-          ];
-
-       if (role === 'admin') {
-        window.location.href = '/admin';
-       } else {
-        window.location.href = '/';
-       }
-
-      } else {
-        const res = await response.text();
-        setError(res || 'Login failed');
-        setSuccess('');
-      }
-    } catch {
-      setError('Server error or backend not reachable');
+      setSuccess("Login successful!");
+      navigate(role === "admin" ? "/admin" : "/", { replace: true });
+    } catch (err) {
+      const msg = err?.response?.data ?? 'Login failed';
+      setError(typeof msg === 'string' ? msg : 'Login failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 

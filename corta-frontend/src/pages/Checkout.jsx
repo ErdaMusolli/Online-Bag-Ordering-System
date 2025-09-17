@@ -1,17 +1,12 @@
 import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../services/apiClient";
 import { useCart } from "../context/CartContext";
-
-function getUserIdFromToken() {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
-  const payload = token.split(".")[1];
-  const decoded = JSON.parse(atob(payload));
-  return decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
-}
+import { useAuth } from "../context/AuthContext";
 
 function Checkout() {
   const { cartItems, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth(); 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -43,11 +38,11 @@ function Checkout() {
     }
   };
 
-  const isFormValid =
-    formData.city &&
-    formData.street &&
-    formData.phone &&
-    cartItems.length > 0;
+  const currentUserId = user?.userId ?? user?.id ?? null;
+
+const isFormValid =
+  Boolean(formData.city && formData.street && formData.phone) &&
+  cartItems.length > 0;
 
   const handleCheckout = async () => {
     if (!isFormValid) {
@@ -55,12 +50,11 @@ function Checkout() {
       return;
     }
 
-    const userId = getUserIdFromToken();
-    if (!userId) {
-      setError("Please login first!");
-      setTimeout(() => navigate("/login"), 1500);
-      return;
-    }
+   if (!isAuthenticated || !currentUserId) {
+    setError("Please login first!");
+    setTimeout(() => navigate("/login"), 1500);
+    return;
+  }
 
     const outOfStockItems = cartItems.filter((item) => item.stock <= 0);
     if (outOfStockItems.length > 0) {
@@ -75,7 +69,7 @@ function Checkout() {
 
 
     const purchaseDto = {
-      userId,
+      userId: currentUserId,
       totalAmount: totalPrice,
       status: "Pending",
       purchaseItems: cartItems.map((item) => ({
@@ -91,37 +85,31 @@ function Checkout() {
       })),
     };
 
-    try {
-      const res = await fetch("http://localhost:5197/api/purchase", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(purchaseDto),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Checkout failed");
-      }
-
-      const data = await res.json();
+       try {
+      const res = await api.post("/purchase", purchaseDto);
+      const data = res.data;
       setSuccess(`Purchase completed successfully! ID: ${data.id}`);
       setError("");
 
-      await fetch("http://localhost:5197/api/cart", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-
+      await api.delete("/cart");
       clearCart();
+      
       setTimeout(() => {
         setSuccess("");
         navigate("/store");
       }, 1500);
     } catch (err) {
-      setError(err.message);
+      const msg =
+        err?.response?.data?.error ||
+        err?.response?.data ||
+        err?.message ||
+        "Checkout failed";
+      if (err?.response?.status === 401) {
+        setError("Session expired. Please login again.");
+        setTimeout(() => navigate("/login"), 1200);
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }

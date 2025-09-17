@@ -1,13 +1,19 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import api, { API_ORIGIN } from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 import { useCart  } from "../context/CartContext";
 import { useWishlist } from "../context/WishlistContext";
 import { useGuestWishlist } from "../context/GuestWishlistContext";
-import ReviewModal from "../components/review/ReviewModal"; 
+import ReviewModal from "../components/review/ReviewModal";
+ 
 
-
-const getImageUrl = (url) =>
-  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
+const getImageUrl = (url) => {
+  if (!url) return "/placeholder.jpg";
+  if (url.startsWith("http")) return url;
+  const rel = url.startsWith("/images/") ? url : `/images/${url}`;
+  return new URL(rel, API_ORIGIN).href;
+};
 
 function ProductDetail() {
   const { id } = useParams();
@@ -16,54 +22,92 @@ function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("S");
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();   
+  
+  const authWishlist   = useWishlist();
+  const guestWishlist  = useGuestWishlist();
+  const wishlistCtx    = isAuthenticated ? authWishlist : guestWishlist;
+  
   const { addToCart } = useCart();
-  const { wishlist, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { wishlist: guestWishlist, addToWishlist: addGuestWishlist, removeFromWishlist: removeGuestWishlist, isInWishlist: isInGuestWishlist } = useGuestWishlist();
-  const token = localStorage.getItem("token");
   const [badge, setBadge] = useState("");
   const [showReview, setShowReview] = useState(false);
 
 
-  useEffect(() => {
-    fetch(`http://localhost:5197/api/products/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
+   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get(`/products/${id}`);
+        const data = res.data;
+        if (cancelled) return;
         setProduct(data);
-        let newBadge = "";
-        if (data.badge === "Best Seller") newBadge = "Best Seller";
-        else if (data.badge === "New Arrival") newBadge = "New Arrival";
-        setBadge(newBadge);
-      })
-      .catch(console.error);
+        setBadge(
+          data.badge === "Best Seller"
+            ? "Best Seller"
+            : data.badge === "New Arrival"
+            ? "New Arrival"
+            : (data.stock ?? data.Stock) <= 0
+            ? "Out of Stock"
+            : ""
+        );
+        const sizes = Array.isArray(data.sizes) && data.sizes.length ? data.sizes : ["S", "M", "L"];
+        setSize(sizes[0]);
+      } catch (e) {
+        if (!cancelled) console.error("Failed to fetch product:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   if (!product) return <p className="text-center mt-5">Loading...</p>;
+
+  const pid = product.id ?? product.Id;
+  const name = product.name ?? product.Name ?? "Product";
+  const price = product.price ?? product.Price ?? 0;
+  const stock = product.stock ?? product.Stock ?? 0;
 
   const productImagesArray = Array.isArray(product.productImages)
     ? product.productImages
     : Array.isArray(product.productImages?.$values)
     ? product.productImages.$values
     : [];
-  const images = [product.imageUrl, ...productImagesArray.map(pi => pi.imageUrl)].filter(Boolean);
 
-  const isInUserWishlist = token ? isInWishlist(product.id) : isInGuestWishlist(product.id);
+  const images = [product.imageUrl, ...productImagesArray.map((pi) => pi.imageUrl)]
+    .filter(Boolean)
+    .map(getImageUrl);
 
-  const handleAddToCart = () => {
-    if (product.stock <= 0) return;
-    addToCart(product, quantity, size, isInUserWishlist);
+  const handleAddToCart = async () => {
+    if (stock <= 0) return;
+
+    addToCart({ ...product, id: pid, price }, quantity, size);
+
+    if (isAuthenticated) {
+      try {
+        await api.post("/cart/items", { productId: pid, quantity, size }); 
+      } catch (err) {
+        console.warn("Server cart add failed; UI mirrored locally.", err);
+      }
+    } else {
+    }
+
     navigate("/cart");
   };
 
-  const handleFavorite = () => {
-    if (token) {
-      isInWishlist(product.id) ? removeFromWishlist(product.id) : addToWishlist(product);
-    } else {
-      isInGuestWishlist(product.id) ? removeGuestWishlist(product.id) : addGuestWishlist(product);
-    }
-  };
+  const inWishlist = wishlistCtx?.isInWishlist?.(pid);
 
-  const handlePrev = () => setMainIndex((mainIndex - 1 + images.length) % images.length);
-  const handleNext = () => setMainIndex((mainIndex + 1) % images.length);
+const handleFavorite = () => {
+  if (!wishlistCtx) return;
+  if (wishlistCtx.isInWishlist?.(pid)) {
+    wishlistCtx.removeFromWishlist?.(pid);
+  } else {
+    wishlistCtx.addToWishlist?.(product);
+  }
+};
+
+  const handlePrev = () => setMainIndex((idx) => (images.length ? (idx - 1 + images.length) % images.length : 0));
+  const handleNext = () => setMainIndex((idx) => (images.length ? (idx + 1) % images.length : 0));
 
   return (
     <div className="container-fluid" style={{ paddingTop: "120px" }}>
@@ -182,7 +226,7 @@ function ProductDetail() {
                 cursor: "pointer",
               }}
             >
-              {isInUserWishlist ? "❤️" : "🤍"}
+              {inWishlist  ? "❤️" : "🤍"}
             </button>
           </div>
 

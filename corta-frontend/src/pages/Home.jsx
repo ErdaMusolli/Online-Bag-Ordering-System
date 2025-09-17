@@ -1,42 +1,51 @@
-
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import DiscountProducts from '../components/home/DiscountProducts';
 import Store from './Store';
-import axios from 'axios';
+import api from '../services/apiClient'; 
 import { useNavigate } from 'react-router-dom';
 import CategoriesSection from '../components/home/CategoriesSection';
 
-const getImageUrl = (url) => url ? `http://localhost:5197${url}` : '/placeholder.jpg';
+const getImageUrl = (url) => {
+  if (!url) return "/placeholder.jpg";
+  if (url.startsWith("http")) return url;
+  return `https://localhost:7254${url.startsWith("/images/") ? url : `/images/${url}`}`;
+};
 
 export default function Home() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
-
+     
   const navigate = useNavigate();
 
-  useEffect(() => {
-    async function fetchProducts() {
+   useEffect(() => {
+    let cancelled = false;
+    (async () => {
       try {
-        const bestsellersRes = await axios.get('http://localhost:5197/api/products/bestsellers');
-        const newArrivalsRes = await axios.get('http://localhost:5197/api/products/newarrivals');
-        const allProductsRes = await axios.get('http://localhost:5197/api/products');
-
+        const [bestsellersRes, newArrivalsRes, allProductsRes] = await Promise.all([
+          api.get('/products/bestsellers'),
+          api.get('/products/newarrivals'),
+          api.get('/products'),
+        ]);
         const bestsellers = Array.isArray(bestsellersRes.data) ? bestsellersRes.data : bestsellersRes.data.$values || [];
         const newArrivalsData = Array.isArray(newArrivalsRes.data) ? newArrivalsRes.data : newArrivalsRes.data.$values || [];
         const allProductsData = Array.isArray(allProductsRes.data) ? allProductsRes.data : allProductsRes.data.$values || [];
 
         allProductsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-        setAllProducts(allProductsData);
-        setRecommendedProducts(bestsellers.map(p => ({ ...p, badge: "Best Seller" })));
-        setNewArrivals(newArrivalsData.map(p => ({ ...p, badge: "New Arrival" })));
+         if (!cancelled) {
+          setAllProducts(allProductsData);
+          setRecommendedProducts(bestsellers.map((p) => ({ ...p, badge: 'Best Seller' })));
+          setNewArrivals(newArrivalsData.map((p) => ({ ...p, badge: 'New Arrival' })));
+        }
       } catch (error) {
-        console.error(error);
+        if (!cancelled) console.error(error);
       }
-    }
-    fetchProducts();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const goToStore = (type) => {

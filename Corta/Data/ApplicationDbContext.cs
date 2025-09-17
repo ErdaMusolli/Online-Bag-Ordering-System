@@ -78,24 +78,28 @@ namespace Corta.Data
                .HasForeignKey(ci => ci.ProductId);
 
             modelBuilder.Entity<RefreshToken>()
+               .HasIndex(rt => rt.TokenHash)
+               .IsUnique();
+
+            modelBuilder.Entity<RefreshToken>()
                .HasOne(rt => rt.User)
                .WithMany()
                .HasForeignKey(rt => rt.UserId)
                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Review>()
-    .HasOne(r => r.User)
-    .WithMany(u => u.Reviews) 
-    .HasForeignKey(r => r.UserId)
-    .OnDelete(DeleteBehavior.Cascade);
+              .HasOne(r => r.User)
+              .WithMany(u => u.Reviews) 
+              .HasForeignKey(r => r.UserId)
+              .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<PurchaseItem>()
-        .HasOne(pi => pi.Product)
-        .WithMany(p => p.PurchaseItems)
-        .HasForeignKey(pi => pi.ProductId)
-        .OnDelete(DeleteBehavior.Restrict);
+             .HasOne(pi => pi.Product)
+             .WithMany(p => p.PurchaseItems)
+             .HasForeignKey(pi => pi.ProductId)
+             .OnDelete(DeleteBehavior.Restrict);
 
-         modelBuilder.Entity<Wishlist>()
+           modelBuilder.Entity<Wishlist>()
             .HasIndex(w => new { w.UserId, w.ProductId })
             .IsUnique();
          

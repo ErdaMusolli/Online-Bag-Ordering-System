@@ -1,147 +1,120 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { authFetch } from "../services/authFetch";           
-import { getNewAccessToken } from "../services/tokenUtils";
+import api from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 
-const WishlistContext = createContext();
+const WishlistContext = createContext(null);
 export const useWishlist = () => useContext(WishlistContext);
 
-export const WishlistProvider = ({ children }) => {
-  const [wishlist, setWishlist] = useState([]);
- 
-  useEffect(() => {
-  const loadWishlist = async () => {
-   const token = localStorage.getItem("token");
-      const refreshToken = localStorage.getItem("refreshToken");
+const GUEST_KEY = "guest_wishlist";
 
-      if (!token && !refreshToken) {
-        const saved = JSON.parse(localStorage.getItem("guest_wishlist") || "[]");
-        setWishlist(Array.isArray(saved) ? saved : []);
+function safeLoad() {
+  try {
+    const raw = localStorage.getItem(GUEST_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+function safeSave(val) {
+  try {
+    localStorage.setItem(GUEST_KEY, JSON.stringify(val));
+  } catch {
+  }
+}
+
+function normalize(p) {
+  const id = p.productId ?? p.id;
+  return {
+    id,
+    name: p.productName ?? p.name ?? "",
+    imageUrl: p.productImageUrl ?? p.imageUrl ?? null,
+    price: Number(p.price ?? p.product?.price ?? 0),
+    stock: Number(p.stock ?? p.product?.stock ?? 0),
+    createdAt: p.createdAt,
+  };
+}
+
+export const WishlistProvider = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  const [wishlist, setWishlist] = useState([]);
+
+ useEffect(() => {
+    let canceled = false;
+    (async () => {
+      if (!isAuthenticated) {
+        const saved = safeLoad();
+        if (!canceled) setWishlist(Array.isArray(saved) ? saved : []);
         return;
       }
-
-      localStorage.removeItem("guest_wishlist");
-
-       try {
-        let res = await authFetch("http://localhost:5197/api/wishlist", { method: "GET" });
-
-        if (res?.status === 401) {
-          const newToken = await getNewAccessToken();
-          if (!newToken) {
-            console.error("Wishlist GET failed: 401 (no refresh token or refresh failed)");
-            setWishlist([]);
-            return;
-          }
-          res = await fetch("http://localhost:5197/api/wishlist", {
-            headers: { Authorization: `Bearer ${newToken}` },
-          });
-        }
-
-        if (!res || !res.ok) {
-          const text = res ? await res.text() : "no response";
-          console.error("Wishlist GET failed:", res?.status, text);
-          setWishlist([]);
-          return;
-        }
-
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          const text = await res.text();
-          console.error("Wishlist GET non-JSON:", ct, text);
-          setWishlist([]);
-          return;
-        }
-
-        const data = await res.json();
-        const products = Array.isArray(data.$values) ? data.$values : [];
-        const formatted = products.map(p => ({
-          id: p.productId,
-          name: p.productName,
-          imageUrl: p.productImageUrl,
-          price: p.price || 0,
-          stock: p.stock || 0,
-          createdAt: p.createdAt
-        }));
-
-        setWishlist(formatted);
+      localStorage.removeItem(GUEST_KEY);
+      try {
+        const { data } = await api.get("/wishlist");
+        const list = Array.isArray(data?.$values) ? data.$values : Array.isArray(data) ? data : [];
+        const formatted = list.map(normalize);
+        if (!canceled) setWishlist(formatted);
       } catch (err) {
-        console.error("Error fetching wishlist:", err);
-        setWishlist([]);
-      }
-  };
-
-  loadWishlist();
-}, []);
-
-  const addToWishlist = async (product) => {
-    const token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
-
-     if (!token && !refreshToken) {
-      setWishlist((prev) => {
-        if (!prev.find((p) => p.id === product.id)) {
-          const updated = [...prev, product];
-          localStorage.setItem("guest_wishlist", JSON.stringify(updated));
-          return updated;
+        if (!canceled) {
+          console.error("Wishlist GET failed:", err);
+          setWishlist([]);
         }
-        return prev;
-      });
-      return;
+      }
+    })();
+    return () => { canceled = true; };
+ }, [isAuthenticated]);
+
+ useEffect(() => {
+    if (!isAuthenticated) safeSave(wishlist);
+  }, [wishlist, isAuthenticated]);
+
+   const addToWishlist = async (product) => {
+    const item = normalize(product);
+    const pid = Number(item.id);
+    if (!pid) return;
+
+    const already = wishlist.some((p) => p.id === pid);
+    if (!already) {
+      setWishlist((prev) => [...prev, item]);
     }
 
-      try {
-         const res = await authFetch("http://localhost:5197/api/wishlist", {
-        method: "POST",
-        body: JSON.stringify({ productId: product.id }),
-      });
+    if (!isAuthenticated) return; 
 
-       if (!res.ok) {
-        const text = await res.text();
-        console.error("Wishlist POST failed:", res.status, text);
+    try {
+      await api.post("/wishlist", { productId: pid });
+      return;
+    } catch (err) {
+      const msg =
+        (err && err.response && err.response.data && err.response.data.message) || "";
+      if (err?.response?.status === 400 && /already/i.test(msg)) {
         return;
       }
-        setWishlist(prev => {
-          if (!prev.find(p => p.id === product.id)) return [...prev, product];
-          return prev;
-        });
-      } catch (err) {
-        console.error("Error adding to wishlist:", err);
+      if (!already) {
+        setWishlist((prev) => prev.filter((p) => p.id !== pid));
       }
+      console.error("Wishlist POST failed:", (err && err.response && err.response.data) || err);
+    }
   };
 
   const removeFromWishlist = async (productId) => {
-    const token = localStorage.getItem("token");
-    const refreshToken = localStorage.getItem("refreshToken");
-
-     if (!token && !refreshToken) {
-      setWishlist((prev) => {
-        const updated = prev.filter((p) => p.id !== productId);
-        localStorage.setItem("guest_wishlist", JSON.stringify(updated));
-        return updated;
-      });
-      return;
-    }
-
-      try {
-      const res = await authFetch(`http://localhost:5197/api/wishlist/${productId}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("Wishlist DELETE failed:", res.status, text);
-      }
-      } catch (err) {
-        console.error("Error removing from wishlist:", err);
-      }
-
     setWishlist((prev) => prev.filter((p) => p.id !== productId));
+
+    if (!isAuthenticated) return;
+
+    try {
+      await api.delete(`/wishlist/${productId}`);
+    } catch (err) {
+      console.error("Wishlist DELETE failed:", err);
+    }
   };
 
-  const isInWishlist = (productId) => Array.isArray(wishlist) && wishlist.some(p => p.id === productId);
+  const isInWishlist = (productId) =>
+    Array.isArray(wishlist) && wishlist.some((p) => p.id === productId);
 
   return (
-    <WishlistContext.Provider value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist }}>
+    <WishlistContext.Provider
+      value={{ wishlist, addToWishlist, removeFromWishlist, isInWishlist }}
+    >
       {children}
     </WishlistContext.Provider>
   );
 };
+

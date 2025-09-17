@@ -2,13 +2,29 @@ import React, { useEffect, useState } from 'react';
 import Sidebar from './Sidebar';
 import DashboardCard from './DashboardCard';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
-import { getNewAccessToken } from '../services/tokenUtils';
-import { authFetch } from '../services/authFetch';
+import api from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 
+const getRole = (u) => {
+  if (!u) return "";
+  const claimsUrl = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+  let r =
+    u.role ??
+    u.Role ??
+    u.userRole ??
+    u.UserRole ??
+    u.roleName ??
+    u.RoleName ??
+    u[claimsUrl] ??
+    u.roles ??
+    u.Roles;
+  if (Array.isArray(r)) r = r[0];
+  return (r || "").toString().toLowerCase();
+};
 
 const DashboardAdmin = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user, logout } = useAuth();
   const [stats, setStats] = useState({
     users: 0,
     products: 0,
@@ -27,82 +43,36 @@ const DashboardAdmin = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-  const checkTokenAndRole = async () => {
-    let token = localStorage.getItem('token');
 
-    if (!token) {
-      token = await getNewAccessToken(); 
-      if (!token) {
-        navigate('/login');
-        return;
+ useEffect(() => {
+  let cancelled = false;
+  (async () => {
+    try {
+      if (getRole(user) !== "admin") return;
+      const { data } = await api.get("/dashboard/admin-stats");
+      if (!cancelled) setStats(data);
+    } catch (err) {
+      const code = err?.response?.status;
+      if (code === 401) {
+        navigate("/login", { replace: true });
+      } else if (code === 403) {
+        navigate("/", { replace: true });
+      } else {
+        console.error("Failed to fetch dashboard stats:", code || err?.message);
       }
     }
+  })();
+  return () => { cancelled = true; };
+}, [user, navigate]);
 
+   const handleLogout = async () => {
     try {
-      const decoded = jwtDecode(token);
-      const role = decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      if (role !== 'admin') {
-        navigate('/');
-      }
-    } catch (err) {
-      localStorage.removeItem('token');
-      navigate('/login');
+      await logout();            
+    } finally {
+      navigate("/login", { replace: true });
     }
   };
 
-  checkTokenAndRole();
-}, [navigate]);
-
-
-  useEffect(() => {
-    const fetchStats = async () => {
-  try {
-    const res = await authFetch('http://localhost:5197/api/dashboard/admin-stats');
-
-    if (!res.ok) {
-      console.error("Fetch failed with status:", res.status);
-      return;
-    }
-
-    const data = await res.json();
-    setStats(data);
-  } catch (err) {
-    console.error('Failed to fetch dashboard stats:', err.message);
-  }
-};
-   const tryFetchingWithRefresh = async () => {
-    const hasRefreshToken = localStorage.getItem('refreshToken');
-    if (!hasRefreshToken) {
-      navigate('/login');
-      return;
-    }
-
-    await fetchStats();
-  };
-
-  tryFetchingWithRefresh();
-}, []);
-
-  const handleLogout = async () => {
-  const refreshToken = localStorage.getItem("refreshToken");
-
-  if (refreshToken) {
-    try {
-      await fetch("http://localhost:5197/api/auth/logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  }
-
-  localStorage.removeItem("token");
-  localStorage.removeItem("refreshToken");
-  window.location.href = "/login";
-};
 
   return (
     <div className="d-flex flex-column flex-md-row min-vh-100 w-100">

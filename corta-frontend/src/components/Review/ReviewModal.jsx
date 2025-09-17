@@ -1,72 +1,75 @@
 import React, { useState, useEffect } from "react";
+import api from "../../services/apiClient";
+import { useAuth } from "../../context/AuthContext";
 
 const getImageUrl = (url) =>
-  url ? (url.startsWith("http") ? url : `http://localhost:5197${url}`) : "/placeholder.jpg";
+  url ? (url.startsWith("http") ? url : `https://localhost:7254${url}`) : "/placeholder.jpg";
 
 const ReviewModal = ({ product, onClose }) => {
+  const { isAuthenticated, user } = useAuth();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
   const [message, setMessage] = useState("");
-  const [user, setUser] = useState({ name: "", email: "" });
+  const [profile, setProfile] = useState({ name: "", email: "" });
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-
-        setUser({
-          name:
-            payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
-            payload["unique_name"] ||
-            "",
-          email:
-            payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ||
-            payload["email"] ||
-            "",
-        });
-      } catch (err) {
-        console.error("Invalid token", err);
-      }
+   useEffect(() => {
+    let canceled = false;
+    if (!isAuthenticated) {
+      setProfile({ name: "", email: "" });
+      return;
     }
-  }, []);
+    (async () => {
+      try {
+        const { data } = await api.get("/auth/me"); 
+        if (!canceled) {
+          setProfile({
+            name: data?.username ?? user?.username ?? "",
+            email: data?.email ?? user?.email ?? "",
+          });
+        }
+      } catch {
+        if (!canceled) {
+          setProfile({
+            name: user?.username ?? "",
+            email: user?.email ?? "",
+          });
+        }
+      }
+    })();
+    return () => {
+      canceled = true;
+    };
+  }, [isAuthenticated, user]);
 
-  const submitReview = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
+ const submitReview = async () => {
+    setMessage("");
+    if (!isAuthenticated) {
       setMessage("You must be logged in to submit a review.");
       return;
     }
-
-    const reviewData = {
-      productId: product.id,
-      rating,
-      comment,
-    };
+    if (!product?.id) {
+      setMessage("Missing product.");
+      return;
+    }
+    if (rating < 1 || rating > 5) {
+      setMessage("Please select a rating from 1 to 5.");
+      return;
+    }
 
     try {
-      const res = await fetch("http://localhost:5197/api/reviews", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(reviewData),
-      });
+      await api.post("/reviews", {
+        productId: product.id,
+        rating,
+        comment,
+      }); 
 
-      if (res.ok) {
-        setMessage("✅ Review added successfully!");
-        setRating(0);
-        setComment("");
-      } else {
-        const errorText = await res.text();
-        console.error("Review submission failed:", errorText);
-        setMessage("❌ Failed to add review.");
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-      setMessage("⚠️ Network error.");
+      setMessage("✅ Review added successfully!");
+      setRating(0);
+      setComment("");
+    } catch (err) {
+      const msg = err?.response?.data || err?.message || "Failed to add review.";
+      setMessage(typeof msg === "string" ? `❌ ${msg}` : "❌ Failed to add review.");
     }
   };
 

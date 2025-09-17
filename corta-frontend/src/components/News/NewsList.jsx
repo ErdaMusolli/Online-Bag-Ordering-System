@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import api from "../../services/apiClient";
+
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 const staticNews = [
   {
@@ -45,48 +48,50 @@ const NewsList = () => {
   const [slideIndex, setSlideIndex] = useState(0);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetch('http://localhost:5197/api/news')
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to fetch news');
-        return res.json();
-      })
-      .then((data) => {
-        try {
-          const rawNewsArray = data?.$values || data;
+useEffect(() => {
+  let alive = true;
 
-          if (!Array.isArray(rawNewsArray)) {
-            throw new Error('Fetched data is not an array');
-          }
-
-          const backendNews = rawNewsArray.map(item => ({
-            id: item.id,
-            title: item.title,
-            description: item.content,
-            author: item.author,
-            date: item.datePublished,
-            image: item.imageUrl ? `http://localhost:5197${item.imageUrl}` : '', // <-- ndryshimi
-            link: `/news/${item.id}`,
-          }));
-
-          const mergedNews = [...staticNews];
-          backendNews.forEach(item => {
-            if (!mergedNews.find(n => n.id === item.id)) {
-              mergedNews.push(item);
-            }
-          });
-
-          setNewsItems(mergedNews);
-        } catch (processingError) {
-          console.error("⚠️ Error processing fetched data:", processingError);
-          setError(processingError.message);
+  api.get("/news") 
+    .then(({ data }) => {
+      try {
+        const rawNewsArray = Array.isArray(data?.$values) ? data.$values : data;
+        if (!Array.isArray(rawNewsArray)) {
+          throw new Error("Fetched data is not an array");
         }
-      })
-      .catch((err) => {
-        console.error("Fetch error:", err);
-        setError(err.message);
-      });
-  }, []);
+
+        const backendNews = rawNewsArray.map((item) => ({
+          id: item.id,
+          title: item.title,
+          description: item.content,
+          author: item.author,
+          date: item.datePublished,
+          image: item.imageUrl ? new URL(item.imageUrl, API_BASE).href : "",
+          link: `/news/${item.id}`,
+        }));
+
+        const mergedNews = [...staticNews];
+        backendNews.forEach((item) => {
+          if (!mergedNews.find((n) => n.id === item.id)) {
+            mergedNews.push(item);
+          }
+        });
+
+        if (alive) setNewsItems(mergedNews);
+      } catch (processingError) {
+        console.error("⚠️ Error processing fetched data:", processingError);
+        if (alive) setError(processingError.message);
+      }
+    })
+    .catch((err) => {
+      console.error("Axios error:", err);
+      if (alive) setError(err.message);
+    });
+
+  return () => {
+    alive = false;
+  };
+}, []);
+
 
   useEffect(() => {
     const interval = setInterval(() => {

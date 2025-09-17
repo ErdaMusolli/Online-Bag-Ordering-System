@@ -1,49 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const UserMenu = () => {
-  const iconStyle = { marginRight: '8px', fontSize: '1.1rem', verticalAlign: 'middle' };
-
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const { user, logout } = useAuth(); 
 
- useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (token) {
+  const email =
+    user?.email ??
+    user?.username ??
+    user?.name ??
+    "";
+
+   const handleLogout = async (e) => {
+    e.preventDefault();
     try {
-      const decoded = jwtDecode(token);
-      console.log('Decoded token:', decoded);  
-      setEmail(
-        decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ||
-        decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
-        ''
-      );
+      await logout();               
     } catch (err) {
-      console.error('Invalid token:', err);
+      console.error("Logout error:", err);
+    } finally {
+      navigate("/login", { replace: true });
     }
-  }
-}, []);
-
-   const handleLogout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-
-  if (refreshToken) {
-    try {
-      await fetch('http://localhost:5197/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken })
-      });
-    } catch (error) {
-      console.error('Failed to logout from server:', error);
-    }
-  }
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    navigate('/login');
   };
-  
+
+  const iconStyle = { marginRight: "8px", fontSize: "1.1rem", verticalAlign: "middle" };
 
  return (
   <div className="dropdown" style={{ position: 'relative' }}>

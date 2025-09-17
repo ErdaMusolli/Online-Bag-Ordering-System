@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { authFetch } from '../services/authFetch';
-import { getNewAccessToken } from '../services/tokenUtils';
+import api from "../services/apiClient";
+
+const ASSET_HOST = "https://localhost:7254";
+const getImgUrl = (u) => !u ? "/default-product.jpg" : (u.startsWith("http") ? u : `${ASSET_HOST}${u}`);
+
 
 const ManagePurchases = () => {
   const navigate = useNavigate(); 
@@ -24,76 +27,65 @@ const ManagePurchases = () => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchPurchases = async () => {
-      let token = localStorage.getItem('token');
-      if (!token) token = await getNewAccessToken();
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
+      setLoading(true);
       try {
-        setLoading(true);
-        const res = await authFetch('http://localhost:5197/api/purchase', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to fetch purchases');
-        const data = await res.json();
+        const { data } = await api.get("/purchase");
 
-        const normalizedPurchases = Array.isArray(data.$values) ? data.$values : data;
+        const list = Array.isArray(data?.$values) ? data.$values : Array.isArray(data) ? data : [];
+        const normalized = list.map((p) => {
+          const items =
+            Array.isArray(p.purchaseItems) ? p.purchaseItems
+            : Array.isArray(p.purchaseItems?.$values) ? p.purchaseItems.$values
+            : [];
 
-        normalizedPurchases.forEach(p => {
-          p.purchaseItems = Array.isArray(p.purchaseItems)
-            ? p.purchaseItems
-            : p.purchaseItems?.$values || [];
+          const fixedItems = items.map((it) => ({
+            ...it,
+            productImageUrl: getImgUrl(it.productImageUrl),
+          }));
 
-          p.purchaseItems.forEach(item => {
-            if (!item.productImageUrl) {
-              item.productImageUrl = '/default-product.jpg';
-            } else if (!item.productImageUrl.startsWith('http')) {
-              item.productImageUrl = `http://localhost:5197${item.productImageUrl}`;
-            }
-          });
-
-          if (!p.status) p.status = 'Pending';
+          return {
+            ...p,
+            status: p.status || "Pending",
+            purchaseItems: fixedItems,
+          };
         });
 
-        setPurchases(normalizedPurchases);
-      } catch (error) {
-        console.error('Error fetching purchases:', error);
+        if (!cancelled) setPurchases(normalized);
+      } catch (err) {
+        if (err?.response?.status === 401) navigate("/login", { replace: true });
+        console.error("Error fetching purchases:", err?.response?.status || err?.message);
+        if (!cancelled) setPurchases([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     fetchPurchases();
+    return () => {
+      cancelled = true;
+    };
   }, [navigate]);
 
   const handleStatusChange = async (purchaseId, newStatus) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      await api.put(
+        `/purchase/${purchaseId}/status`,
+        JSON.stringify(newStatus),
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-      const res = await fetch(`http://localhost:5197/api/purchase/${purchaseId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(newStatus),
-      });
-
-      if (res.ok) {
-        setPurchases(prev =>
-          prev.map(p => (p.id === purchaseId ? { ...p, status: newStatus } : p))
-        );
-      } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to update status');
-      }
+      setPurchases((prev) =>
+        prev.map((p) => (p.id === purchaseId ? { ...p, status: newStatus } : p))
+      );
     } catch (err) {
-      console.error('Error updating status:', err);
+      console.error("Error updating status:", err?.response?.status || err?.message);
+      alert("Failed to update status");
     }
   };
+
 
   const filteredPurchases = purchases
     .filter(p => p.userId.toString().includes(searchTerm.trim()))
