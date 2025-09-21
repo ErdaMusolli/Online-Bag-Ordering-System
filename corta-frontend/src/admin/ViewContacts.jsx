@@ -7,8 +7,6 @@ const ViewContacts = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [replyMessage, setReplyMessage] = useState(null);
-  const [replyContent, setReplyContent] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchMessages = async () => {
@@ -25,8 +23,7 @@ const ViewContacts = () => {
     }
   };
 
-
- const deleteMessage = async (id) => {
+  const deleteMessage = async (id) => {
     if (!window.confirm("Are you sure you want to delete this message?")) return;
     try {
       await api.delete(`/contactmessages/${id}`);
@@ -40,6 +37,7 @@ const ViewContacts = () => {
   useEffect(() => {
     fetchMessages();
   }, []);
+
   const filteredMessages = messages.filter((m) =>
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -91,7 +89,7 @@ const ViewContacts = () => {
                   <th>Full Name</th>
                   <th>Email</th>
                   <th>Message</th>
-                  <th style={{ minWidth: '160px' }}>Actions</th>
+                  <th style={{ minWidth: '120px' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,16 +116,7 @@ const ViewContacts = () => {
                     <td>
                       <div className="d-flex gap-2">
                         <button
-                          className="btn btn-outline-primary btn-sm"
-                          onClick={() => {
-                            setReplyMessage(msg);
-                            setReplyContent('');
-                          }}
-                        >
-                          Reply
-                        </button>
-                        <button
-                          className="btn btn-danger btn-sm"
+                          className="btn btn-outline-danger btn-sm"
                           onClick={() => deleteMessage(msg.id)}
                         >
                           Delete
@@ -180,65 +169,9 @@ const ViewContacts = () => {
             </div>
           </div>
         )}
-
-        {replyMessage && (
-          <div
-            className="modal show fade d-block"
-            tabIndex="-1"
-            role="dialog"
-            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
-            onClick={() => setReplyMessage(null)}
-          >
-            <div
-              className="modal-dialog modal-dialog-centered"
-              role="document"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="modal-content shadow">
-                <div className="modal-header">
-                  <h5 className="modal-title">Reply to {replyMessage.email}</h5>
-                  <button
-                    type="button"
-                    className="btn-close"
-                    onClick={() => setReplyMessage(null)}
-                  ></button>
-                </div>
-                <div className="modal-body">
-                  <textarea
-                    className="form-control"
-                    rows="5"
-                    placeholder="Write your reply..."
-                    value={replyContent}
-                    onChange={(e) => setReplyContent(e.target.value)}
-                  ></textarea>
-                </div>
-                <div className="modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => setReplyMessage(null)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      console.log("Reply to", replyMessage.email, ":", replyContent);
-                      alert(`Reply to ${replyMessage.email}:\n\n${replyContent}`);
-                      setReplyMessage(null);
-                    }}
-                    disabled={!replyContent.trim()}
-                  >
-                    Send Reply
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 };
 
 export default ViewContacts;
-

@@ -2,11 +2,12 @@ import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/apiClient";
 
-  const getImageUrl = (url) => {
+const getImageUrl = (url) => {
   if (!url) return "/default-product.jpg";
   if (url.startsWith("http")) return url;
   return `https://localhost:7254${url.startsWith("/images/") ? url : `/images/${url}`}`;
 };
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ const Orders = () => {
         (Array.isArray(order?.purchaseItems) ? order.purchaseItems[0] : undefined);
       return {
         ...order,
-        firstImage: firstItem?.productImageUrl || "/default-product.jpg",
+        firstImage: getImageUrl(firstItem?.productImageUrl),
         displayStatus: order?.status === "Completed" ? "Delivered" : order?.status,
       };
     });
@@ -131,11 +132,7 @@ const Orders = () => {
               </Link>
 
               <img
-                src={
-                  order.firstImage.startsWith("http") 
-                    ? order.firstImage 
-                    : `http://localhost:5197${order.firstImage}`
-                }
+                src={order.firstImage}
                 alt="Product"
                 style={{
                   width: "140px",
@@ -158,6 +155,7 @@ const Orders = () => {
 };
 
 export default Orders;
+
 
 
 

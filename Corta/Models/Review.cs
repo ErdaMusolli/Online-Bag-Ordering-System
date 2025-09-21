@@ -15,5 +15,7 @@ namespace Corta.Models
 
         [ForeignKey("UserId")]
         public User User { get; set; } = null!;
+        [ForeignKey("ProductId")]
+    public Product Product { get; set; } = null!;
     }
 }

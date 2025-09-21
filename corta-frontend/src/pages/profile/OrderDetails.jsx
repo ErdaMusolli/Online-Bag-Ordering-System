@@ -133,11 +133,13 @@ const OrderDetails = () => {
           {items.map((item, index) => (
             <div key={index} style={{ display: "flex", flexWrap: "wrap", gap: "15px", alignItems: "center", padding: "15px 10px", borderBottom: "1px solid #eee" }}>
               <img
-                src={item.productImageUrl?.startsWith("http") ? item.productImageUrl : `http://localhost:5197${item.productImageUrl}`}
-                alt={item.productName}
-                onError={(e) => { e.target.onerror = null; e.target.src = "/default-product.jpg"; }}
-                style={{ width: "90px", height: "90px", objectFit: "cover", borderRadius: "6px", border: "1px solid #ccc" }}
-              />
+  src={item.productImageUrl?.startsWith("http") 
+    ? item.productImageUrl 
+    : `https://localhost:7254${item.productImageUrl}`}
+  alt={item.productName}
+  onError={(e) => { e.target.onerror = null; e.target.src = "/default-product.jpg"; }}
+  style={{ width: "90px", height: "90px", objectFit: "cover", borderRadius: "6px", border: "1px solid #ccc" }}
+/>
               <div style={{ flex: "1 1 200px", minWidth: "200px" }}>
                 <p style={{ margin: 0, fontWeight: "600", fontSize: "16px", color: "#222" }}>{item.productName}</p>
                 <p style={{ margin: "6px 0 0", color: "#555", fontSize: "14px" }}>Quantity: {item.quantity}</p>
@@ -176,4 +178,3 @@ const OrderDetails = () => {
 };
 
 export default OrderDetails;
-

@@ -39,7 +39,8 @@ namespace Corta.Data
            .HasOne(p => p.Category)
            .WithMany(c => c.Products)
            .HasForeignKey(p => p.CategoryId)
-           .OnDelete(DeleteBehavior.Restrict);
+           .OnDelete(DeleteBehavior.Restrict)
+           .IsRequired(false);
 
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
@@ -107,7 +108,6 @@ namespace Corta.Data
         }
     }
 }
-
 
 
 

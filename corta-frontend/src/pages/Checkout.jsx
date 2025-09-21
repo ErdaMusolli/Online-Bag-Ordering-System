@@ -11,6 +11,7 @@ function Checkout() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
   const [formData, setFormData] = useState({
     city: "",
     village: "",
@@ -163,26 +164,26 @@ const isFormValid =
             >
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <img
-                  src={
-                    item.imageUrl
-                      ? item.imageUrl.startsWith("http")
-                        ? item.imageUrl
-                        : `http://localhost:5197${item.imageUrl.replace("public/", "")}`
-                      : "/default-product.jpg"
-                  }
-                  alt={item.productName || item.name}
-                  style={{
-                    width: "80px",
-                    height: "80px",
-                    objectFit: "cover",
-                    borderRadius: "6px",
-                    border: "1px solid #ccc",
-                  }}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = "/default-product.jpg";
-                  }}
-                />
+  src={
+    item.imageUrl
+      ? item.imageUrl.startsWith("http")
+        ? item.imageUrl
+        : `${API_URL}${item.imageUrl.replace("public/", "")}`
+      : "/default-product.jpg"
+  }
+  alt={item.productName || item.name}
+  style={{
+    width: "80px",
+    height: "80px",
+    objectFit: "cover",
+    borderRadius: "6px",
+    border: "1px solid #ccc",
+  }}
+  onError={(e) => {
+    e.target.onerror = null;
+    e.target.src = "/default-product.jpg";
+  }}
+/>
                 <div>
                   <p style={{ margin: 0, fontWeight: "600" }}>
                     {item.productName || item.name}

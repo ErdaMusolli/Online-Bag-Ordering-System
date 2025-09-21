@@ -11,9 +11,6 @@ const ChangePassword = () => {
   });
 
   const [message, setMessage] = useState('');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -21,8 +18,8 @@ const ChangePassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-   
     const { newPassword, confirmPassword } = formData;
+
     if (newPassword.length < 8) {
       setMessage('New password must be at least 8 characters long');
       return;
@@ -43,8 +40,7 @@ const ChangePassword = () => {
       return;
     }
 
-
-     try {
+    try {
       const res = await api.post('/auth/change-password', formData);
       if (res.status === 200) {
         setMessage('Password changed successfully.');
@@ -56,80 +52,79 @@ const ChangePassword = () => {
     }
   };
 
-
   return (
     <div
-      className="container-fluid bg-light d-flex justify-content-center align-items-center min-vh-100"
       style={{
-        paddingTop: '50px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start', 
         minHeight: '100vh',
-        width: '90vw',
+        padding: '100px 150px',
         backgroundColor: '#f8f9fa',
       }}
-      
     >
-        
-        <div className="col-12 col-md-6 bg-white p-4 p-md-5">
-          <h2 className="mb-4 text-center fw-bold" style={{ fontFamily: 'Georgia, serif' }}>
-            Change Password
-          </h2>
+      <div style={{ width: '500px' }}>
+        <div className="card p-4 shadow-sm">
+          <h2 className="mb-4 text-center">Change Password</h2>
 
           {message && (
-            <div className={`alert ${message.startsWith('Failed') ? 'alert-danger' : 'alert-success'}`}>
+            <div
+              className={`alert ${
+                message.startsWith('Failed') ? 'alert-danger' : 'alert-success'
+              }`}
+            >
               {message}
             </div>
           )}
 
-    <form onSubmit={handleSubmit}>
-     <div className="mb-3 position-relative">
-      <label className="form-label">Current Password</label>
-       <input
-         type={showCurrentPassword ? "text" : "password"}
-         name="currentPassword"
-         className="form-control" 
-         placeholder="Enter your current password"
-         value={formData.currentPassword}
-         onChange={handleChange}
-         required
-       />
-</div>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-3">
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                name="currentPassword"
+                className="form-control"
+                placeholder="Enter current password"
+                value={formData.currentPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
+            <div className="mb-3">
+              <label className="form-label">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                className="form-control"
+                placeholder="Enter new password"
+                value={formData.newPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-   <div className="mb-3 position-relative">
-     <label className="form-label">New Password</label>
-       <input
-       type={showNewPassword ? "text" : "password"}
-       name="newPassword"
-       className="form-control"
-       placeholder="Enter your new password"
-       value={formData.newPassword}
-       onChange={handleChange}
-       required
-       />
-</div>
+            <div className="mb-3">
+              <label className="form-label">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                className="form-control"
+                placeholder="Re-enter new password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-
-   <div className="mb-3 position-relative">
-     <label className="form-label">Confirm New Password</label>
-      <input
-       type={showConfirmPassword ? "text" : "password"}
-       name="confirmPassword"
-       className="form-control"
-       placeholder="Re-enter your new password"
-       value={formData.confirmPassword}
-       onChange={handleChange}
-       required
-     />
-</div>
-
- <button type="submit" className="btn btn-success w-100">
-     Change Password
-         </button>
-        </form>
+            <button type="submit" className="btn btn-success w-100">
+              Change Password
+            </button>
+          </form>
+        </div>
       </div>
-  </div>
+    </div>
   );
 };
 
 export default ChangePassword;
-

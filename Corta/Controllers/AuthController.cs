@@ -113,11 +113,14 @@ namespace Corta.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                return Unauthorized("Invalid credentials");
+           var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+if (user is null)
+    return Unauthorized("Invalid credentials");
 
-            var (accessToken, jti, accessExp) = _jwtService.CreateAccessToken(user);
+if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+    return Unauthorized("Invalid credentials");
+
+var (accessToken, jti, accessExp) = _jwtService.CreateAccessToken(user);
             var (rtRaw, rtHash, rtExp) = _jwtService.CreateRefreshToken(user, jti);
 
             var rt = new RefreshToken
@@ -152,25 +155,28 @@ namespace Corta.Controllers
                 .Include(t => t.User)
                 .FirstOrDefaultAsync(t => t.TokenHash == rtHash);
 
-            if (token == null || token.User == null) return Unauthorized();
-            if (token.ExpiresAt <= DateTimeOffset.UtcNow || token.RevokedAt != null) return Unauthorized();
+          if (token == null || token.User == null) return Unauthorized();
 
-            if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
-            {
-                var replaced = await _context.RefreshTokens
-                    .Include(t => t.User)
-                    .FirstOrDefaultAsync(t => t.TokenHash == token.ReplacedByTokenHash);
+          if (token.ExpiresAt <= DateTimeOffset.UtcNow || token.RevokedAt != null) return Unauthorized();
 
-                if (replaced == null || replaced.RevokedAt != null || replaced.ExpiresAt <= DateTimeOffset.UtcNow)
-                    return Unauthorized();
+          User user = token.User; 
 
-                token = replaced; 
-            }
+          if (!string.IsNullOrEmpty(token.ReplacedByTokenHash))
+          {
+        var replaced = await _context.RefreshTokens
+           .Include(t => t.User)
+           .FirstOrDefaultAsync(t => t.TokenHash == token.ReplacedByTokenHash);
 
-            var user = token.User;
+        if (replaced == null || replaced.RevokedAt != null || replaced.ExpiresAt <= DateTimeOffset.UtcNow)
+           return Unauthorized();
 
-            var (accessToken, jti, accessExp) = _jwtService.CreateAccessToken(user);
-            var (newRtRaw, newRtHash, newRtExp) = _jwtService.CreateRefreshToken(user, jti);
+          token = replaced;
+          if (token.User is null) return Unauthorized();
+           user = token.User; 
+         }
+ 
+       var (accessToken, jti, accessExp) = _jwtService.CreateAccessToken(user);
+       var (newRtRaw, newRtHash, newRtExp) = _jwtService.CreateRefreshToken(user, jti);
 
             token.RevokedAt = DateTimeOffset.UtcNow;
             token.ReplacedByTokenHash = newRtHash;
@@ -263,14 +269,16 @@ namespace Corta.Controllers
             var roleClaim = User.FindFirstValue(ClaimTypes.Role)
                           ?? User.FindFirstValue("role");
 
-            string role = roleClaim;
-            if (string.IsNullOrEmpty(role) && int.TryParse(userId, out var uid))
-            {
-                var dbUser = await _context.Users.FindAsync(uid);
-                role = dbUser?.Role; 
-            }
+           string? role = User.FindFirstValue(ClaimTypes.Role) ?? User.FindFirstValue("role");
 
-            return Ok(new { userId, email, name, role });
+           if (string.IsNullOrEmpty(role) && int.TryParse(userId, out var uid))
+       {
+           var dbUser = await _context.Users.FindAsync(uid);
+           role = dbUser?.Role;
+       }
+
+        role ??= string.Empty; 
+        return Ok(new { userId, email, name, role });
         }
 
     }

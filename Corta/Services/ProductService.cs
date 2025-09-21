@@ -21,10 +21,10 @@ namespace Corta.Services
                 .Include(p => p.ProductImages)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(categorySlug))
-            {
-                q = q.Where(p => p.Category.Slug == categorySlug);
-            }
+           if (!string.IsNullOrWhiteSpace(categorySlug))
+{
+          q = q.Where(p => p.Category != null && p.Category.Slug == categorySlug);
+}
 
          if (!string.IsNullOrWhiteSpace(material))
 {

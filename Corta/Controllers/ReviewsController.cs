@@ -24,6 +24,18 @@ public class ReviewsController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<List<ReviewDto>>> GetMyReviews()
+    {
+        var userIdClaim = User.FindFirst("UserId");
+        if (userIdClaim == null) return Unauthorized();
+
+        int userId = int.Parse(userIdClaim.Value);
+        var reviews = await _service.GetByUserIdAsync(userId);
+        return Ok(reviews);
+    }
+
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<Review>> Create(ReviewCreateDto dto)
     {

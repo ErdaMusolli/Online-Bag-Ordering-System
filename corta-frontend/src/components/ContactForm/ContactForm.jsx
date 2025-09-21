@@ -8,6 +8,9 @@ const ContactForm = ({ onClose }) => {
   });
 
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const token = localStorage.getItem("access_token");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,28 +24,36 @@ const ContactForm = ({ onClose }) => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5197/api/contactmessages", {
+      const response = await fetch("https://localhost:7254/api/contactmessages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(formData),
+        credentials: "include",
       });
+
+      if (response.status === 401) {
+        setErrorMessage("⚠️ You must be logged in to send a message.");
+        return;
+      }
 
       if (response.ok) {
         setSuccess(true);
+        setErrorMessage("");
         setFormData({ fullName: "", email: "", message: "" });
+
+        setTimeout(() => {
+          if (onClose) onClose();
+          else window.history.back();
+        }, 2000);
       } else {
-        alert("Error sending message.");
+        setErrorMessage("Error sending message.");
       }
     } catch (error) {
       console.error("Error:", error);
-    }
-  };
-
-  const handleBack = () => {
-    if (onClose) {
-      onClose();
-    } else {
-      window.history.back(); 
+      setErrorMessage("Something went wrong. Please try again.");
     }
   };
 
@@ -57,30 +68,8 @@ const ContactForm = ({ onClose }) => {
         padding: "60px 20px 40px",
         backgroundColor: "#fff",
         boxSizing: "border-box",
-        position: "relative",
       }}
     >
-      <button
-        onClick={handleBack}
-        style={{
-          position: "absolute",
-          top: "20px",
-          left: "20px",
-          backgroundColor: "#80836c",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-          padding: "8px 14px",
-          cursor: "pointer",
-          fontWeight: "bold",
-          transition: "opacity 0.3s ease",
-        }}
-        onMouseEnter={(e) => (e.target.style.opacity = "0.8")}
-        onMouseLeave={(e) => (e.target.style.opacity = "1")}
-      >
-        ← Back
-      </button>
-
       <div
         style={{
           maxWidth: "1000px",
@@ -88,19 +77,53 @@ const ContactForm = ({ onClose }) => {
           display: "flex",
           flexDirection: "row",
           gap: "50px",
+          position: "relative",
         }}
       >
+        <button
+          onClick={() => (onClose ? onClose() : window.history.back())}
+          style={{
+            position: "absolute",
+            top: "-60px",
+            right: "-20px",
+            background: "#fdfdfdff",
+            border: "none",
+            borderRadius: "50%",
+            width: "30px",
+            height: "30px",
+            fontSize: "18px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          ✖
+        </button>
+
         <div style={{ flex: 1 }}>
-          <h3 style={{ marginBottom: "15px", fontWeight: "bold" }}>Get in touch</h3>
+          <h3 style={{ marginBottom: "px", fontWeight: "bold" }}>Get in touch</h3>
           <p style={{ marginBottom: "25px" }}>info@corta.store</p>
 
           <h3 style={{ marginBottom: "15px", fontWeight: "bold" }}>Customer support</h3>
-          <p style={{ marginBottom: "25px" }}>+383 4* *** ***</p>
+          <p style={{ marginBottom: "25px" }}>+383 44 123 123</p>
         </div>
 
         <div style={{ flex: 1 }}>
           <h2 style={{ marginBottom: "20px", fontWeight: "bold" }}>Get in Touch</h2>
           <p style={{ marginBottom: "25px" }}>Contact us for any inquiries or feedback.</p>
+
+          {errorMessage && (
+            <div
+              style={{
+                backgroundColor: "#f8d7da",
+                color: "#721c24",
+                padding: "10px",
+                borderRadius: "5px",
+                marginBottom: "15px",
+              }}
+            >
+              {errorMessage}
+            </div>
+          )}
 
           {success && (
             <div
@@ -163,7 +186,7 @@ const ContactForm = ({ onClose }) => {
                   borderRadius: "5px",
                 }}
                 required
-              />
+              ></textarea>
             </div>
             <button
               type="submit"

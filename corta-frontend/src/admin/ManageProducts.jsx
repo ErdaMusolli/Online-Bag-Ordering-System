@@ -138,7 +138,9 @@ export default function ManageProducts() {
         fd.append("oldPrice", String(editForm.oldPrice));
       }
       fd.append("stock", String(editForm.stock ?? ""));
-      fd.append("categoryId", String(editForm.categoryId ?? ""));
+      if (editForm.categoryId !== "" && editForm.categoryId != null) {
+      fd.append("categoryId", String(editForm.categoryId));
+    }
       fd.append("material", String(editForm.material ?? ""));
 
       if (editForm.image) {
@@ -168,7 +170,9 @@ export default function ManageProducts() {
         fd.append("oldPrice", String(newProduct.oldPrice));
       }
       fd.append("stock", String(newProduct.stock ?? ""));
-      fd.append("categoryId", String(newProduct.categoryId ?? ""));
+     if (newProduct.categoryId !== "" && newProduct.categoryId != null) {
+      fd.append("categoryId", String(newProduct.categoryId));
+    }
       fd.append("material", String(newProduct.material ?? ""));
 
       if (newProduct.image) fd.append("image", newProduct.image);
@@ -351,24 +355,26 @@ export default function ManageProducts() {
                   </div>
                 ))}
 
-                <div className="mb-3">
-                  <label>Category</label>
-                  <select
-                    className="form-control"
-                    value={editForm.categoryId || ""}
-                    onChange={(e) => setEditForm({ ...editForm, categoryId: Number(e.target.value) })}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select category
-                    </option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+               <div className="mb-3">
+              <label>Category</label>
+              <select
+              className="form-control"
+              value={editForm.categoryId ?? ""}                                  
+              onChange={(e) =>
+             setEditForm((f) => ({
+             ...f,
+              categoryId: e.target.value === "" ? "" : Number(e.target.value), 
+              }))
+            }
+           >
+            <option value="">— No category —</option>                         
+           {categories.map((c) => (
+           <option key={c.id} value={c.id}>
+            {c.name}
+           </option>
+           ))}
+         </select>
+        </div>
 
                 <div className="mb-3">
                   <label>Fabric</label>
@@ -459,23 +465,25 @@ export default function ManageProducts() {
                 ))}
 
                 <div className="mb-3">
-                  <label>Category</label>
-                  <select
-                    className="form-control"
-                    value={newProduct.categoryId || ""}
-                    onChange={(e) => setNewProduct({ ...newProduct, categoryId: Number(e.target.value) })}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select category
-                    </option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+               <label>Category</label>
+               <select
+               className="form-control"
+               value={newProduct.categoryId ?? ""}                             
+               onChange={(e) =>
+               setNewProduct((p) => ({
+                 ...p,
+               categoryId: e.target.value === "" ? "" : Number(e.target.value), 
+               }))
+              }
+              >
+               <option value="">— No category —</option>                           
+               {categories.map((c) => (
+               <option key={c.id} value={c.id}>
+               {c.name}
+               </option>
+               ))}
+             </select>
+            </div>
 
                 <div className="mb-3">
                   <label>Fabric</label>
@@ -529,4 +537,3 @@ export default function ManageProducts() {
     </div>
   );
 }
-

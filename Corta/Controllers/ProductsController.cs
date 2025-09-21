@@ -35,7 +35,7 @@ namespace Corta.Controllers
                 p.PurchaseCount,
                 p.ImageUrl,
                 p.Size,
-                Category = new { p.CategoryId, p.Category.Name, p.Category.Slug },
+                Category = p.Category == null ? null : new { p.CategoryId, p.Category.Name, p.Category.Slug },
                 p.Material,
                 ProductImages = p.ProductImages.Select(pi => new
                 {

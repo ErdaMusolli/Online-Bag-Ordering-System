@@ -13,7 +13,7 @@ const ReviewModal = ({ product, onClose }) => {
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState({ name: "", email: "" });
 
-   useEffect(() => {
+  useEffect(() => {
     let canceled = false;
     if (!isAuthenticated) {
       setProfile({ name: "", email: "" });
@@ -42,7 +42,7 @@ const ReviewModal = ({ product, onClose }) => {
     };
   }, [isAuthenticated, user]);
 
- const submitReview = async () => {
+  const submitReview = async () => {
     setMessage("");
     if (!isAuthenticated) {
       setMessage("You must be logged in to submit a review.");
@@ -67,6 +67,10 @@ const ReviewModal = ({ product, onClose }) => {
       setMessage("✅ Review added successfully!");
       setRating(0);
       setComment("");
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+
     } catch (err) {
       const msg = err?.response?.data || err?.message || "Failed to add review.";
       setMessage(typeof msg === "string" ? `❌ ${msg}` : "❌ Failed to add review.");
@@ -97,20 +101,6 @@ const ReviewModal = ({ product, onClose }) => {
           position: "relative",
         }}
       >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "10px",
-            right: "10px",
-            border: "none",
-            background: "transparent",
-            fontSize: "18px",
-            cursor: "pointer",
-          }}
-        >
-          ✖
-        </button>
         <div style={{ textAlign: "center", marginBottom: "15px" }}>
           <img
             src={getImageUrl(product.imageUrl)}

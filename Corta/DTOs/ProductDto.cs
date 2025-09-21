@@ -14,7 +14,7 @@ namespace Corta.DTOs
     public int PurchaseCount { get; set; }
     public decimal? OldPrice { get; set; }
 
-    public int CategoryId { get; set; }
+    public int? CategoryId { get; set; }
     public string? Material { get; set; }
 
     public List<ProductImageDto> ProductImages { get; set; } = new();
